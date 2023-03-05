@@ -111,7 +111,14 @@ async function DataCleaning({
 
 // 後傳入的優先級越高
 
+// 個別清洗
+// DataCleaning({
+    // LengthSort: false,
+    // Data: ["Short", "Long", "Language", "Artist", "Character", "Title", "Beautify", "Tags"]
+// });
+
+// 整合輸出
 DataCleaning({
-    LengthSort: false,
+    Merge: true,
     Data: ["Short", "Long", "Language", "Artist", "Character", "Title", "Beautify", "Tags"]
 });
