@@ -14,11 +14,11 @@ function GenerateWords(Data, Save="All_Words.json") {
 };
 
 // 讀取文件
-function ReadWords(Path) {
+function ReadWords(Path, Parse=true) {
     return new Promise((resolve, reject) => {
         open.readFile(Path, "utf-8", (err, data) => {
             const Read = err ? false : data ?? false;
-            if (Read) resolve(JSON.parse(Read));
+            if (Read) resolve(Parse ? JSON.parse(Read) : data);
             else {
                 console.log(err);
                 resolve({});
@@ -147,6 +147,26 @@ async function DataCleaning({
     };
 };
 
+/**
+ * 解析 Csv 數據轉換成 Json 輸出, Data 需要傳遞 array
+ */
+async function CsvToJson(Data) {
+    let Read_Data = "";
+
+    for (const Path of Data) { // 讀出來的是字串, 將所有字串合併
+        Read_Data += await ReadWords(`${Path}.csv`, false);
+    };
+
+    const ParseBox = {};
+    for (const str of Read_Data.split("\r\n")) {
+        for (const str1 of str.replace(/"/g, "").split(",")) {
+            if (/^\d+$/.test(str1)) continue;
+            ParseBox[str1.replace(/_/g, " ")] = "";
+        }
+    }
+
+    GenerateWords(ParseBox, "Csv.json");
+}
 
 /**
  * 這兩個函數是用於爬取數據, 轉換成簡單格式的 json
