@@ -62,6 +62,8 @@
     "gallery list": "相簿列表",
     "gallery title": "相簿標題",
     "gallery toplists": "相簿排行",
+    "go back": "返回",
+    "has artist": "有繪師",
     "has artists": "有繪師",
     "has wiki": "有維基",
     "have an": "有一個",
@@ -75,6 +77,7 @@
     "last seen": "最後線上於",
     "learn more": "瞭解更多",
     "lexical sort": "字典排序",
+    "logging in": "登入",
     "looping animation": "循環動畫",
     "manage folders": "管理資料夾",
     "max speed": "最大速度",
@@ -149,5 +152,6 @@
     "visitor statistics": "訪客統計",
     "vote to expunge": "投票刪除",
     "yearly stats": "年度統計",
-    "you are not logged in.": "你沒有登入"
+    "you are not logged in.": "你沒有登入",
+    "you do not have permission to visit this page.": "您沒有存取此頁面的權限"
 }
