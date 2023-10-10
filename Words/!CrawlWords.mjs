@@ -39,7 +39,7 @@ async function DataCrawl(Data) {
     );
 
     for (const data of Data) {
-        const NewData = {}; // 本存遠端新字典
+        const NewData = {}; // 緩存遠端新字典
         const {Name, Uri} = data; // 解構傳遞的數據
 
         for (const type of Uri) { // 取得數據類型
