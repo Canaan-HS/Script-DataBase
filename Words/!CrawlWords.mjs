@@ -34,8 +34,12 @@ async function CsvToJson(Data) {
  * 讀取本地字典, 獲取更新的部份
  */
 async function DataCrawl(Data) {
-    const localKeys = new Set( // 獲取本地所有已存在 字典 key
-        Object.keys(await File.Read("All_Words.json"))
+    // 獲取本地已存在 字典
+    const Exclude = await File.Read("!Exclude.json");
+    const All_Words = await File.Read("All_Words.json");
+
+    const localKeys = new Set( // 將全部字典 和 排除的字典 合併, 取得所有 key 值
+        Object.keys(Object.assign(All_Words, Exclude))
     );
 
     for (const data of Data) {
@@ -83,6 +87,8 @@ async function DataCrawl(Data) {
         // 將新數據輸出到, 處理緩存硬碟
         if (Object.keys(NewData).length > 0) {
             File.Write(NewData, `R:/New_${Name}.json`);
+        } else {
+            console.log(`${Name} 無新數據`);
         }
     }
 }
