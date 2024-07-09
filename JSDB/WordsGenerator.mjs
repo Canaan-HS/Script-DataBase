@@ -14,7 +14,12 @@ function GenerateWords(Data, Save="All_Words.json") {
 function ReadWords(Path) {
     return new Promise((resolve, reject) => {
         open.readFile(Path, "utf-8", (err, data) => {
-            resolve(JSON.parse(err ? {} : data ?? {}));
+            const Read = err ? false : data ?? false;
+            if (Read) resolve(JSON.parse(Read));
+            else {
+                console.log(err);
+                resolve({});
+            }
         });
     });
 };
@@ -107,18 +112,42 @@ async function DataCleaning({
     }
 };
 
+
+/**
+ * 這兩個函數是用於爬取數據, 轉換成簡單格式的 json
+ * (這裡是用不了的)
+ */
+function OuputJson(Data) {
+    const Json = document.createElement("a");
+    const Name = document.querySelector("h1#sticky-file-name-id").textContent.replace(".md", "");
+    Json.href = `data:application/json;charset=utf-8,${encodeURIComponent(Data)}`;
+    Json.download = `${Name}.json`;
+    Json.click();
+    setTimeout(()=> {Json.remove()}, 1e3);
+};
+
+function DataCrawling() {
+    const dict = {};
+    document.querySelectorAll("article.markdown-body table:nth-child(2) tbody:nth-child(2) tr").forEach(tr=> {
+        const td = tr.querySelectorAll("td");
+        const [key, value] = [td[0].textContent, td[1].textContent];
+        if (key && value) dict[key] = value;
+    });
+    OuputJson(JSON.stringify(dict, null, 2));
+};
+
 /* ======================================================= */
 
 // 後傳入的優先級越高
 
 DataCleaning({ // 個別清洗
     LengthSort: false,
-    Data: ["Short", "Long", "Language", "Artist", "Character", "Title", "Beautify", "Tags"]
+    Data: ["Short", "Long", "Language", "Artist", "Character", "Parody", "Tags", "Beautify"]
 });
 
 setTimeout(() => {
     DataCleaning({ // 整合輸出
         Merge: true,
-        Data: ["Short", "Long", "Language", "Artist", "Character", "Title", "Beautify", "Tags"]
+        Data: ["Short", "Long", "Language", "Artist", "Character", "Parody", "Tags", "Beautify"]
     });
-}, 2000);
+}, 1000);
