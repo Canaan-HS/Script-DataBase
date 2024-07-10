@@ -1,4 +1,7 @@
+import { fileURLToPath } from "url";
+import path from "path";
 import open from "fs";
+process.chdir(path.dirname(fileURLToPath(import.meta.url)));
 
 // 輸出文件
 function GenerateWords(Data, Save="All_Words.json") {
@@ -29,15 +32,16 @@ function ReadWords(Path) {
  * @param {boolean} Sort - 是否進行排序
  * @param {boolean} Merge - 是否合併輸出 (合併輸出就會是 All_Words.json)
  * @param {boolean} LengthSort - 是否使用長度來排序, 否的話使用 字母
+ * @param {boolean} SimilarExcl - 排除 key 和 value 類似的, 會另外輸出類似的
  */
 async function DataCleaning({
     Data,
     Sort=true,
     Merge=false,
     LengthSort=true,
+    SimilarExcl=false,
 }={}) {
-    const Read_Data = {};
-    const Cleaning = (Key, Value) => [Key.trim().toLowerCase(), Value.trim()];
+    const Read_Data = {}, Similar = {};
 
     for (const Path of Data) { // 讀取所有傳入的數據
         Read_Data[Path] = await ReadWords(`${Path}.json`);
@@ -47,7 +51,11 @@ async function DataCleaning({
         let Cache = Sort ? [] : {};
         const ProcessedData = Object.assign(...Object.values(Read_Data)); // 將全部物件合併
         for (const [Key, Value] of Object.entries(ProcessedData)) {
-            const [Clean_key, Clean_value] = Cleaning(Key, Value); // 載入物件值進行清洗
+
+            const Cleaning = CleaningTreatment(Key, Value);
+            if (!Cleaning) continue;
+            const [Clean_key, Clean_value] = Cleaning;
+
             Sort
                 ? Cache.push({
                     data: { [Clean_key]: Clean_value },
@@ -57,6 +65,7 @@ async function DataCleaning({
         };
 
         if (Sort) Cache = SortBy(Cache);
+        SimilarExcl && OutputSimilar();
         GenerateWords(Cache); // 輸出文件
     } else {
         const Split_Box = {};
@@ -64,7 +73,10 @@ async function DataCleaning({
             let Cache = Sort ? [] : {};
 
             for (const [V_Key, V_Value] of Object.entries(Value)) {
-                const [Clean_key, Clean_value] = Cleaning(V_Key, V_Value);
+
+                const Cleaning = CleaningTreatment(V_Key, V_Value);
+                if (!Cleaning) continue;
+                const [Clean_key, Clean_value] = Cleaning;
 
                 Sort
                     ? Cache.push({
@@ -92,10 +104,33 @@ async function DataCleaning({
         };
 
         // 最後分別輸出
+        SimilarExcl && OutputSimilar();
         for (const [key, value] of Object.entries(Split_Box)) {
             GenerateWords(value, `${key}.json`);
         }
     }
+
+    // 輸出類似
+    function OutputSimilar() {
+        if (Object.keys(Similar).length > 0) GenerateWords(Similar, `Similar.json`);
+    };
+
+    // 清潔方式
+    function CleaningTreatment(Key, Value) {
+        if (/^\d+$/.test(Key)) return; // key 值都是數字的排除
+        const [clean_key, clean_value] = [Key.trim().toLowerCase(), Value.trim()]; // 清潔數據格式
+        if (SimilarExcl) {
+            const [similar_key, similar_value] = [
+                Key.replace(/[\W_]+/g, ""),
+                Value.toLowerCase().replace(/[\W_]+/g, "")
+            ];
+            if (similar_key == similar_value) { // 對相似的進行排除
+                Similar[clean_key] = clean_value;
+                return;
+            }
+        }
+        return [clean_key, clean_value];
+    };
 
     // 排序方式
     function SortBy(Cache) {
@@ -109,7 +144,7 @@ async function DataCleaning({
         })
 
         return Result;
-    }
+    };
 };
 
 
@@ -142,12 +177,12 @@ function DataCrawling() {
 
 DataCleaning({ // 個別清洗
     LengthSort: false,
-    Data: ["Short", "Long", "Language", "Artist", "Character", "Parody", "Tags", "Beautify"]
+    Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
 });
 
 setTimeout(() => {
     DataCleaning({ // 整合輸出
         Merge: true,
-        Data: ["Short", "Long", "Language", "Artist", "Character", "Parody", "Tags", "Beautify"]
+        Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
     });
 }, 1000);
