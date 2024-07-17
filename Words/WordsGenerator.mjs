@@ -183,7 +183,7 @@ function OuputJson(Data) {
 
 function DataCrawling() {
     const dict = {};
-    document.querySelectorAll("article.markdown-body table:nth-child(2) tbody:nth-child(2) tr").forEach(tr=> {
+    document.querySelectorAll("article.markdown-body table")[3].querySelectorAll("tbody tr").forEach(tr=> {
         const td = tr.querySelectorAll("td");
         const [key, value] = [td[0].textContent, td[1].textContent];
         if (key && value) dict[key] = value;
