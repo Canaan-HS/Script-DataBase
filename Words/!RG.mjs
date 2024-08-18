@@ -15,11 +15,14 @@ export function ReadWords(Path, Parse=true) {
 };
 
 // 輸出文件
-export function GenerateWords(Data, Save="All_Words.json") {
+export function GenerateWords(OutPutData, SaveName="All_Words.json") {
+    const Content = SaveName.endsWith("json") 
+        ? JSON.stringify(OutPutData, null, 4) 
+        : OutPutData;
+
     open.writeFile(
-        Save,
-        JSON.stringify(Data, null, 4),
+        SaveName, Content,
     err => {
-        err ? console.log(`${Save}: 輸出失敗`) : console.log(`${Save}: 輸出成功`);
+        err ? console.log(`${SaveName}: 輸出失敗`) : console.log(`${SaveName}: 輸出成功`);
     });
 };
