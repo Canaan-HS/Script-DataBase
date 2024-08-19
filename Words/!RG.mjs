@@ -16,8 +16,8 @@ export function ReadWords(Path, Parse=true) {
 
 // 輸出文件
 export function GenerateWords(OutPutData, SaveName="All_Words.json") {
-    const Content = SaveName.endsWith("json") 
-        ? JSON.stringify(OutPutData, null, 4) 
+    const Content = SaveName.endsWith("json")
+        ? JSON.stringify(OutPutData, null, 4)
         : OutPutData;
 
     open.writeFile(
