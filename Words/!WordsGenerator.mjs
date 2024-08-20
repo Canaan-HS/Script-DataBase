@@ -2,7 +2,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 process.chdir(path.dirname(fileURLToPath(import.meta.url)));
 
-import {ReadWords, GenerateWords} from "./!RG.mjs";
+import { File } from "./!File.mjs";
 
 /**
  * @param {Array} Data - 數據需要是 ["json1", "json2"...] 的格式
@@ -21,7 +21,7 @@ async function DataCleaning({
     const Read_Data = {}, Similar = {};
 
     for (const Path of Data) { // 讀取所有傳入的數據
-        Read_Data[Path] = await ReadWords(`${Path}.json`);
+        Read_Data[Path] = await File.Read(`${Path}.json`);
     };
 
     if (Merge) {
@@ -43,7 +43,9 @@ async function DataCleaning({
 
         if (Sort) Cache = SortBy(Cache);
         SimilarExcl && OutputSimilar();
-        GenerateWords(Cache); // 輸出文件
+        File.Write(Cache); // 輸出文件
+
+        return true; // 完成回傳
     } else {
         const Split_Box = {};
         for (const [Key, Value] of Object.entries(Read_Data)) {
@@ -83,13 +85,15 @@ async function DataCleaning({
         // 最後分別輸出
         SimilarExcl && OutputSimilar();
         for (const [key, value] of Object.entries(Split_Box)) {
-            GenerateWords(value, `${key}.json`);
+            File.Write(value, `${key}.json`);
         }
+
+        return true; // 完成回傳
     }
 
     // 輸出類似
     function OutputSimilar() {
-        if (Object.keys(Similar).length > 0) GenerateWords(Similar, `Similar.json`);
+        if (Object.keys(Similar).length > 0) File.Write(Similar, `Similar.json`);
     };
 
     // 清潔方式
@@ -127,15 +131,12 @@ async function DataCleaning({
 /* ======================================================= */
 
 // 後傳入的優先級越高
-
-DataCleaning({ // 個別清洗
+DataCleaning({ // 個別處理
     LengthSort: false,
     Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
-});
-
-setTimeout(() => {
+}).then(()=> {
     DataCleaning({ // 整合輸出
         Merge: true,
         Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
-    });
-}, 1000);
+    })
+});

@@ -5,7 +5,7 @@ process.chdir(path.dirname(fileURLToPath(import.meta.url)));
 import axios from 'axios';
 import * as marked from 'marked';
 import * as cheerio from 'cheerio';
-import { ReadWords, GenerateWords } from './!RG.mjs';
+import { File } from './!File.mjs';
 
 /**
  * 解析 Csv 數據轉換成 Json 輸出, Data 需要傳遞 array
@@ -14,7 +14,7 @@ async function CsvToJson(Data) {
     let Read_Data = "";
 
     for (const Path of Data) { // 讀出來的是字串, 將所有字串合併
-        Read_Data += await ReadWords(`${Path}.csv`, false);
+        Read_Data += await File.Read(`${Path}.csv`, false);
     };
 
     const ParseBox = {};
@@ -25,7 +25,7 @@ async function CsvToJson(Data) {
         }
     }
 
-    GenerateWords(ParseBox, "Csv.json");
+    File.Write(ParseBox, "Csv.json");
 }
 
 /**
@@ -35,7 +35,7 @@ async function CsvToJson(Data) {
  */
 async function DataCrawl(Data) {
     const localKeys = new Set( // 獲取本地所有已存在 字典 key
-        Object.keys(await ReadWords("All_Words.json"))
+        Object.keys(await File.Read("All_Words.json"))
     );
 
     for (const data of Data) {
@@ -81,7 +81,9 @@ async function DataCrawl(Data) {
         };
 
         // 將新數據輸出到, 處理緩存硬碟
-        GenerateWords(NewData, `R:/New_${Name}.json`);
+        if (Object.keys(NewData).length > 0) {
+            File.Write(NewData, `R:/New_${Name}.json`);
+        }
     }
 }
 
