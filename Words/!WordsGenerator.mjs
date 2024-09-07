@@ -131,6 +131,10 @@ async function DataCleaning({
 /* ======================================================= */
 
 // 後傳入的優先級越高
+// DataCleaning({
+    // Data: ["!Exclude"]
+// })
+
 DataCleaning({ // 個別處理
     LengthSort: false,
     Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
