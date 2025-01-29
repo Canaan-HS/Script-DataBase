@@ -6,6 +6,7 @@ import axios from 'axios';
 import * as marked from 'marked';
 import * as cheerio from 'cheerio';
 import { File } from './!File.mjs';
+import { title } from 'process';
 
 /**
  * 解析 Csv 數據轉換成 Json 輸出, Data 需要傳遞 array
@@ -26,6 +27,21 @@ async function CsvToJson(Data) {
     }
 
     File.Write(ParseBox, "Csv.json");
+}
+
+/**
+ * 用於快速獲取 Wiki 角色列表的範本
+ */
+function PrintWikiCharacterList() {
+    const data = {};
+    document.querySelectorAll("dl dt").forEach(item => {
+        const match = item.textContent.match(/^(.+?)\s*（.*?，\s*([\w\s]+)）/);
+        if (match) {
+            data[match[2].toLowerCase()] = match[1];
+        }
+    });
+
+    console.log(JSON.stringify(data, null, 2));
 }
 
 /**
