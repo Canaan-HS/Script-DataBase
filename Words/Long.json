@@ -230,5 +230,7 @@
     "yearly stats": "年度統計",
     "you are not logged in.": "你沒有登入",
     "you do not have permission to visit this page.": "您沒有存取此頁面的權限",
-    "you have no email address in your profile, so you can't have your password reset.": "您的個人資料中沒有電子郵件地址，因此無法重設密碼。"
+    "you have no email address in your profile, so you can't have your password reset.": "您的個人資料中沒有電子郵件地址，因此無法重設密碼。",
+    "you need to log in to add favorites": "您需要登錄才能添加收藏夾",
+    "you need to log in to download": "您需要登錄才能下載"
 }
