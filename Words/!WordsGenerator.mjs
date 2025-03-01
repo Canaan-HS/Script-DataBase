@@ -2,7 +2,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 process.chdir(path.dirname(fileURLToPath(import.meta.url)));
 
-import { File } from "./!File.mjs";
+import { File } from "../File.mjs";
 
 /**
  * @param {Array} Data - 數據需要是 ["json1", "json2"...] 的格式
