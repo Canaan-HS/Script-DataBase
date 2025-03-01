@@ -2,17 +2,22 @@ import path from "path";
 import { fileURLToPath } from "url";
 process.chdir(path.dirname(fileURLToPath(import.meta.url)));
 
-// import * as OpenCC from "opencc-js";
+import * as OpenCC from "opencc-js";
 import clipboardy from "clipboardy";
 import { File } from "../File.mjs";
 
 function Clear() {
-    // const converter = OpenCC.Converter({ from: 'tw', to: 'cn' });
+    const CNtoTW = OpenCC.Converter({ from: "cn", to: "tw" });
+
     File.Read("./List.json", true).then(List => {
         const New = {};
 
         for (const [Key, Value] of Object.entries(List)) {
-            if (Key == Value) continue;
+            if (Key == Value) continue; // 繁簡相同
+
+            const tc = CNtoTW(Key);
+            if (tc == Value || tc != Key) continue; // 簡體轉繁後 與自己相同 或 與繁體不同
+
             New[Key.trim()] = Value.trim();
         }
 
@@ -37,4 +42,4 @@ function Generate() {
 
 
 // Clear();
-// Generate();
+Generate();
