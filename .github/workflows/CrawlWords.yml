@@ -1,0 +1,22 @@
+name: Crawl Words Workflow
+
+# 暫時的模板
+on:
+  schedule:
+    # UTC+8時區的晚上11點對應UTC時間15:00
+    - cron: '0 15 * * *'
+
+  # 保留手動觸發選項，方便測試
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    name: Crawl Words Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Temprary 1
+        run: echo "Temprary step"
+
+      - name: Temprary 2
+        run: echo "Temprary step"
