@@ -1,0 +1,4 @@
+httpx
+opencc
+markdown
+beautifulsoup4
