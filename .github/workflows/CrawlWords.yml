@@ -1,22 +1,51 @@
+# GitHub Actions
 name: Crawl Words Workflow
 
-# 暫時的模板
+# 觸發條件：暫時只保留手動觸發用於測試
 on:
-  schedule:
-    # UTC+8時區的晚上11點對應UTC時間15:00
-    - cron: '0 15 * * *'
+  # 註釋掉定時觸發，等測試成功後再啟用
+  # schedule:
+  #   # UTC+8時區的晚上11點對應UTC時間15:00
+  #   - cron: '0 15 * * *'
 
-  # 保留手動觸發選項，方便測試
+  # 手動觸發
   workflow_dispatch:
 
 jobs:
   crawl:
-    name: Crawl Words Job
+    name: 爬蟲工作創建
     runs-on: ubuntu-latest
 
     steps:
-      - name: Temprary 1
-        run: echo "Temprary step"
+      - name: 取得倉庫代碼
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1  # 淺克隆，提高速度
 
-      - name: Temprary 2
-        run: echo "Temprary step"
+      - name: 設定Python環境
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12.9'
+          cache: 'pip'  # 啟用pip緩存加速依賴安裝
+
+      - name: 安裝Python套件
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Words/WorkflowScript/requirements.txt
+
+      - name: 執行爬蟲
+        run: |
+          python Words/WorkflowScript/CrawlWords.py
+
+      - name: 提交變更
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+
+          if [[ -n $(git status -s) ]]; then
+            git add -A
+            git commit -m "Update words data via GitHub Actions"
+            git push
+          else
+            echo "No changes to commit"
+          fi
