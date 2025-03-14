@@ -13,7 +13,7 @@ os.chdir(Path(__file__).parent)
 class WordCrawl:
     def __init__(self):
         self.client = httpx.Client(http2=True)
-        self.cn_tw = opencc.OpenCC("s2twp.json")
+        self.cn_tw = opencc.OpenCC("s2twp")
         self.get_exist_words = lambda: self.read_local_json(
             "../All_Words.json"
         ) | self.read_local_json("../Exclude.json")
@@ -63,7 +63,7 @@ class WordCrawl:
     # 讀取遠端縮需要的資料
     def __extract_table_rows(self, word_type, soup) -> dict:
         return {
-            key: (value if word_type == "Group" else self.cn_tw(value))
+            key: (value if word_type == "Group" else self.cn_tw.convert(value))
             for tr in soup.select("table tr:has(td + td)")
             if (
                 cells := [
