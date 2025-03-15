@@ -11,6 +11,10 @@ on:
   # 手動觸發
   workflow_dispatch:
 
+# 給予存取權限
+permissions:
+  contents: write
+
 jobs:
   crawl:
     name: 爬蟲工作創建
