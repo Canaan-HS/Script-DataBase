@@ -1,19 +1,22 @@
 import os
 import json
+import threading
 from pathlib import Path
 
 import httpx
-import opencc
+# import opencc
 import markdown
 from bs4 import BeautifulSoup
 
 os.chdir(Path(__file__).parent)
 
+# Todo - 增加數據清洗
+# Todo - 將清洗後的數據, 直接寫到對應原始檔案
 
 class WordCrawl:
     def __init__(self):
         self.client = httpx.Client(http2=True)
-        self.cn_tw = opencc.OpenCC("s2twp")
+        # self.cn_tw = opencc.OpenCC("s2twp")
         self.get_exist_words = lambda: self.read_local_json(
             "../All_Words.json"
         ) | self.read_local_json("../Exclude.json")
@@ -43,27 +46,32 @@ class WordCrawl:
                     allowed[key] = value
 
             if allowed:
-                Path("allow").mkdir(exist_ok=True)
-                Path(f"allow/{name}.json").write_text(
-                    json.dumps(
-                        allowed, indent=4, separators=(",", ":"), ensure_ascii=False
-                    ),
-                    encoding="utf-8",
-                )
+                print(allowed)
+                # Path("allow").mkdir(exist_ok=True)
+                # Path(f"allow/{name}.json").write_text(
+                #     json.dumps(
+                #         allowed, indent=4, separators=(",", ":"), ensure_ascii=False
+                #     ),
+                #     encoding="utf-8",
+                # )
 
             if review:
-                Path("review").mkdir(exist_ok=True)
-                Path(f"review/{name}.json").write_text(
-                    json.dumps(
-                        review, indent=4, separators=(",", ":"), ensure_ascii=False
-                    ),
-                    encoding="utf-8",
-                )
+                print(review)
+                # Path("review").mkdir(exist_ok=True)
+                # Path(f"review/{name}.json").write_text(
+                #     json.dumps(
+                #         review, indent=4, separators=(",", ":"), ensure_ascii=False
+                #     ),
+                #     encoding="utf-8",
+                # )
 
     # 讀取遠端縮需要的資料
     def __extract_table_rows(self, word_type, soup) -> dict:
         return {
-            key: (value if word_type == "Group" else self.cn_tw.convert(value))
+            key: (
+                value
+                # if word_type == "Group" else self.cn_tw.convert(value)
+            )
             for tr in soup.select("table tr:has(td + td)")
             if (
                 cells := [
@@ -100,10 +108,11 @@ class WordCrawl:
                 word_type, BeautifulSoup(html, "html.parser")
             )
 
+    # 開始工作
     def start(self, data: object):
         exist_words = self.get_exist_words()  # 讀取本地數據
 
-        for item in data:
+        def worker(item):
             remote_words = {}
             name = item["Name"]
 
@@ -114,7 +123,11 @@ class WordCrawl:
             new_words = {
                 k: remote_words[k] for k in remote_words.keys() - exist_words.keys()
             }
+
             self.parse_write_json({name: new_words})
+
+        for item in data:  # 不想額外安裝依賴用 threading
+            threading.Thread(target=worker, args=(item,)).start()
 
 
 if __name__ == "__main__":
