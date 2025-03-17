@@ -15,7 +15,7 @@ export const File = (()=> {
         })
     };
 
-    function Write(OutPutData, SaveName="All_Words.json") {
+    function Write(OutPutData, SaveName) {
         const Content = SaveName.endsWith("json")
             ? JSON.stringify(OutPutData, null, 4)
             : OutPutData;
