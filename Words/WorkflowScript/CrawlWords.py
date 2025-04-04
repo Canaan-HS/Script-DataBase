@@ -4,6 +4,7 @@ import threading
 from pathlib import Path
 
 import httpx
+
 # import opencc
 import markdown
 from bs4 import BeautifulSoup
@@ -12,6 +13,8 @@ os.chdir(Path(__file__).parent)
 
 # Todo - 增加數據清洗
 # Todo - 將清洗後的數據, 直接寫到對應原始檔案
+# ? 本地端 3.13 版本不支援 opencc
+
 
 class WordCrawl:
     def __init__(self):
@@ -25,11 +28,7 @@ class WordCrawl:
     def read_local_json(self, json_path) -> dict:
         json_path = Path(json_path)
         try:
-            return (
-                json.loads(json_path.read_text(encoding="utf-8"))
-                if json_path.exists()
-                else {}
-            )
+            return json.loads(json_path.read_text(encoding="utf-8")) if json_path.exists() else {}
         except:
             return {}
 
@@ -75,8 +74,7 @@ class WordCrawl:
             for tr in soup.select("table tr:has(td + td)")
             if (
                 cells := [
-                    td.get_text().strip()
-                    for td in tr.select("td:nth-child(1), td:nth-child(2)")
+                    td.get_text().strip() for td in tr.select("td:nth-child(1), td:nth-child(2)")
                 ]
             )
             and len(cells) >= 2
@@ -104,9 +102,7 @@ class WordCrawl:
                 ],
             )
 
-            return self.__extract_table_rows(
-                word_type, BeautifulSoup(html, "html.parser")
-            )
+            return self.__extract_table_rows(word_type, BeautifulSoup(html, "html.parser"))
 
     # 開始工作
     def start(self, data: object):
@@ -120,9 +116,7 @@ class WordCrawl:
                 remote_words |= self.get_remote_words(uri)
 
             # 找到不包含在, 已經存在的字典
-            new_words = {
-                k: remote_words[k] for k in remote_words.keys() - exist_words.keys()
-            }
+            new_words = {k: remote_words[k] for k in remote_words.keys() - exist_words.keys()}
 
             self.parse_write_json({name: new_words})
 
