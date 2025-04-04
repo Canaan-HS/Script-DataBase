@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 process.chdir(path.dirname(fileURLToPath(import.meta.url)));
 
 import { File } from "../../File.mjs";
+import { log } from "console";
 
 /**
  * @param {Array} Data - 數據需要是 ["json1", "json2"...] 的格式
@@ -16,7 +17,7 @@ async function DataCleaning({
     Sort=true,
     Merge=false,
     LengthSort=true,
-    SimilarExcl=false,
+    SimilarExcl=false
 }={}) {
     const Read_Data = {}, Similar = {};
 
@@ -98,18 +99,23 @@ async function DataCleaning({
 
     // 清潔方式
     function CleaningTreatment(Key, Value) {
-        if (/^\d+$/.test(Key)) return; // key 值都是數字的排除
         const [clean_key, clean_value] = [Key.trim().toLowerCase(), Value.trim()]; // 清潔數據格式
-        if (SimilarExcl) {
+
+        if (/^\d+$/.test(clean_key)) return; // key 值都是數字的排除
+        if (clean_key.length < 3) return; // key 值長度小於 3 的排除
+        if (clean_key == clean_value) return; // key 和 value 相同的排除
+
+        if (SimilarExcl) { // 對相似的進行排除
             const [similar_key, similar_value] = [
                 Key.replace(/[\W_]+/g, ""),
                 Value.toLowerCase().replace(/[\W_]+/g, "")
             ];
-            if (similar_key == similar_value) { // 對相似的進行排除
+            if (similar_key == similar_value) {
                 Similar[clean_key] = clean_value;
                 return;
             }
         }
+
         return [clean_key, clean_value];
     };
 
@@ -136,7 +142,6 @@ async function DataCleaning({
 // })
 
 DataCleaning({ // 個別處理
-    LengthSort: false,
     Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
 }).then(()=> {
     DataCleaning({ // 整合輸出
