@@ -142,6 +142,7 @@ async function DataCleaning({
 // })
 
 DataCleaning({ // 個別處理
+    LengthSort: false,
     Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
 }).then(()=> {
     DataCleaning({ // 整合輸出
