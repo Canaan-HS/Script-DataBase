@@ -6,23 +6,42 @@ import * as OpenCC from "opencc-js";
 import clipboardy from "clipboardy";
 import { File } from "../File.mjs";
 
-function Clear() {
+/* 列表清洗 key = 繁體, value = 簡體 */
+function Clear(Source = "./List.json") {
     const CNtoTW = OpenCC.Converter({ from: "cn", to: "tw" });
 
-    File.Read("./List.json", true).then(List => {
+    File.Read(Source, true).then(List => {
         const New = {};
 
         for (const [Key, Value] of Object.entries(List)) {
-            if (Key == Value) continue; // 繁簡相同
+            if (Key === Value) continue; // 繁體跟簡體一樣
 
-            const tc = CNtoTW(Key);
-            if (tc == Value || tc != Key) continue; // 簡體轉繁後 與自己相同 或 與繁體不同
+            const KeyToTW = CNtoTW(Key);
+            const ValueToTW = CNtoTW(Value);
 
-            New[Key.trim()] = Value.trim();
+            // 如果 Key 不是繁體，或 Value 是繁體，就跳過
+            if (KeyToTW !== Key || ValueToTW === Value) continue;
+
+            // Value 是簡體，但轉回繁體 ≠ Key → 修正 Key 為正確的繁體
+            const FinalKey = (ValueToTW !== Key) ? ValueToTW : Key;
+
+            New[FinalKey.trim()] = Value.trim();
         }
 
-        File.Write(New, "./List.json");
+        File.Write(New, Source);
     })
+};
+
+function Compare(Words) {
+    File.Read("./List.json", true).then(List => {
+        const New = {};
+
+        for (const [Key, Value] of Object.entries(Words)) {
+            if (!List[Key]) New[Key] = Value;
+        }
+
+        File.Write(New, "./Differ.json");
+    });
 };
 
 function Generate() {
@@ -41,5 +60,5 @@ function Generate() {
 };
 
 
-// Clear();
-Generate();
+Clear();
+// Generate();
