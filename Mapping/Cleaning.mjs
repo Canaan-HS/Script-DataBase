@@ -9,22 +9,34 @@ import { File } from "../File.mjs";
 /* 列表清洗 key = 繁體, value = 簡體 */
 function Clear(Source = "./List.json") {
     const CNtoTW = OpenCC.Converter({ from: "cn", to: "tw" });
+    const TWtoCN = OpenCC.Converter({ from: "tw", to: "cn" });
 
     File.Read(Source, true).then(List => {
         const New = {};
 
         for (const [Key, Value] of Object.entries(List)) {
-            if (Key === Value) continue; // 繁體跟簡體一樣
+            if (Key === Value) continue; // 繁簡相同跳過
 
             const KeyToTW = CNtoTW(Key);
             const ValueToTW = CNtoTW(Value);
+            const ValueToCN = TWtoCN(Value);
 
-            // 如果 Key 不是繁體，或 Value 是繁體，就跳過
-            if (KeyToTW !== Key || ValueToTW === Value) continue;
+            // Key 不是繁體 跳過
+            if (KeyToTW !== Key) continue;
 
-            // Value 是簡體，但轉回繁體 ≠ Key → 修正 Key 為正確的繁體
+            // 判斷 Value：
+            // 如果 Value 是繁體（ValueToTW === Value），且 Value 是繁體（ValueToCN === Value），跳過
+            // 如果 Value 是簡體（ValueToCN !== Value），則保留，即使 ValueToTW === Value（OpenCC 不認識）
+
+            const ValueIsSimplified = ValueToCN !== Value;
+            const ValueIsTraditional = ValueToTW === Value;
+
+            if (ValueIsTraditional && !ValueIsSimplified) {
+                // Value 是繁體且不是簡體 → 跳過
+                continue;
+            }
+
             const FinalKey = (ValueToTW !== Key) ? ValueToTW : Key;
-
             New[FinalKey.trim()] = Value.trim();
         }
 
@@ -62,3 +74,5 @@ function Generate() {
 
 Clear();
 // Generate();
+
+// Compare()
