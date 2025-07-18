@@ -8,7 +8,8 @@ import { log } from "console";
 /**
  * @param {Array} Data - 數據需要是 ["json1", "json2"...] 的格式
  * @param {boolean} Sort - 是否進行排序
- * @param {boolean} Merge - 是否合併輸出 (合併輸出就會是 All_Words.json)
+ * @param {boolean} Merge - 是否合併輸出
+ * @param {string} MergeName - 合併輸出的檔名
  * @param {boolean} LengthSort - 是否使用長度來排序, 否的話使用 字母
  * @param {boolean} SimilarExcl - 排除 key 和 value 類似的, 會另外輸出類似的
  */
@@ -16,6 +17,7 @@ async function DataCleaning({
     Data,
     Sort=true,
     Merge=false,
+    MergeName="All_Words",
     LengthSort=true,
     SimilarExcl=false
 }={}) {
@@ -44,7 +46,7 @@ async function DataCleaning({
 
         if (Sort) Cache = SortBy(Cache);
         SimilarExcl && OutputSimilar();
-        File.Write(Cache, "../All_Words.json"); // 輸出文件
+        File.Write(Cache, `../${MergeName}.json`); // 輸出文件
 
         return true; // 完成回傳
     } else {
@@ -141,12 +143,22 @@ async function DataCleaning({
     // Data: ["!Exclude"]
 // })
 
-DataCleaning({ // 個別處理
-    LengthSort: false,
-    Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
-}).then(()=> {
-    DataCleaning({ // 整合輸出
+async function GeneratorWord() {
+    await DataCleaning({ // 個別處理
+        LengthSort: false,
+        Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
+    });
+
+    await DataCleaning({ // 完整 合併處理
         Merge: true,
         Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
-    })
-});
+    });
+
+    DataCleaning({ // 精選 合併處理
+        Merge: true,
+        MergeName: "Curated_Words",
+        Data: ["Beautify", "Parody", "Character", "Long", "Language", "Tags"]
+    });
+}
+
+GeneratorWord();
