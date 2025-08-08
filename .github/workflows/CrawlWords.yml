@@ -22,12 +22,12 @@ jobs:
 
     steps:
       - name: 取得倉庫代碼
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1  # 淺克隆，提高速度 (只克隆最新狀態)
 
       - name: 設定Python環境
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12.9'
           cache: 'pip'  # 啟用pip緩存加速依賴安裝
