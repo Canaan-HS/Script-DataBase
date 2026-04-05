@@ -1,10 +1,11 @@
 class CopyManga extends ComicSource {
+    // ! PC 版用 簡化版
 
     name = "拷贝漫画"
 
     key = "copy_manga"
 
-    version = "1.4.1"
+    version = "1.4.2"
 
     minAppVersion = "1.6.0"
 
@@ -14,7 +15,7 @@ class CopyManga extends ComicSource {
 
     static defaultImageQuality = "1500"
 
-    static defaultApiUrl = 'api.copy2000.online'
+    static defaultApiUrl = "api.2024manga.com"
 
     static searchApi = "/api/v3/search/comic"
 
@@ -32,23 +33,26 @@ class CopyManga extends ComicSource {
 
     static maxRetries = 5
 
+    static reqIdApi = "https://marketing.aiacgn.com/api/v2/adopr/query3/?format=json&ident=200100001"
     async getReqID() {
-        const reqIdUrl = "https://marketing.aiacgn.com/api/v2/adopr/query3/?format=json&ident=200100001";
+        if (this.copyRegion === "0") return "";
+
         let reqId = "";
+
         try {
-            const response = await Network.get(reqIdUrl, this.headers);
+            const response = await Network.get(CopyManga.reqIdApi, this.headers);
+
             if (response.status === 200) {
                 const data = JSON.parse(response.body);
                 reqId = data.results.request_id;
             }
-        } catch (e) {
-        }
+        } catch (e) { }
+
         return reqId;
     }
 
     get headers() {
         return {
-            "Authorization": this.loadData('token') ? `Token ${this.loadData('token')}` : '',
             "Accept": "application/json",
             "webp": "1",
             "platform": CopyManga.platform,
@@ -111,35 +115,6 @@ class CopyManga extends ComicSource {
 
     init() {
         this.author_path_word_dict = {}
-    }
-
-
-    /// account
-    /// set this to null to desable account feature
-    account = {
-        login: async (account, pwd) => {
-            let salt = randomInt(1000, 9999)
-            let base64 = Convert.encodeBase64(Convert.encodeUtf8(`${pwd}-${salt}`))
-            let res = await Network.post(
-                `${this.apiUrl}/api/v3/login`,
-                {
-                    "Content-Type": CopyManga.contentType
-                },
-                `username=${account}&password=${base64}&salt=${salt}&source=Official&version=2.2.0&platform=3`
-            );
-            if (res.status === 200) {
-                let data = JSON.parse(res.body)
-                let token = data.results.token
-                this.saveData('token', token)
-                return "ok"
-            } else {
-                throw `Invalid Status Code ${res.status}`
-            }
-        },
-        logout: () => {
-            this.deleteData('token')
-        },
-        registerWebsite: "https://www.manga2026.com/web/login/loginByAccount"
     }
 
     /// explore pages
@@ -378,59 +353,6 @@ class CopyManga extends ComicSource {
                 label: "搜索选项"
             }
         ]
-    }
-
-    favorites = {
-        multiFolder: false,
-        addOrDelFavorite: async (comicId, folderId, isAdding) => {
-            let is_collect = isAdding ? 1 : 0
-            let token = this.loadData("token");
-            let comicData = await Network.get(
-                `${this.apiUrl}/api/v3/comic2/${comicId}?platform=3`,
-                this.headers
-            )
-            if (comicData.status !== 200) {
-                throw `Invalid status code: ${comicData.status}`
-            }
-            let comic_id = JSON.parse(comicData.body).results.comic.uuid
-            let res = await Network.post(
-                `${this.apiUrl}/api/v3/member/collect/comic`,
-                {
-                    ...this.headers,
-                    "Content-Type": CopyManga.contentType,
-                },
-                `comic_id=${comic_id}&is_collect=${is_collect}&authorization=Token+${token}`
-            )
-            if (res.status === 401) {
-                throw `Login expired`;
-            }
-            if (res.status !== 200) {
-                throw `Invalid status code: ${res.status}`
-            }
-            return "ok"
-        },
-        loadComics: async (page, folder) => {
-            let ordering = this.loadSetting('favorites_ordering') || '-datetime_updated';
-            var res = await Network.get(
-                `${this.apiUrl}/api/v3/member/collect/comics?limit=${CopyManga.pageLimit}&offset=${(page - 1) * CopyManga.pageLimit}&free_type=1&ordering=${ordering}`,
-                this.headers
-            )
-
-            if (res.status === 401) {
-                throw `Login expired`
-            }
-
-            if (res.status !== 200) {
-                throw `Invalid status code: ${res.status}`
-            }
-
-            let data = JSON.parse(res.body)
-
-            return {
-                comics: data["results"]["list"].map(CopyManga.parseComic),
-                maxPage: CopyManga.maxPage(data["results"]["total"]),
-            }
-        }
     }
 
     comic = {
@@ -736,16 +658,6 @@ class CopyManga extends ComicSource {
     }
 
     settings = {
-        favorites_ordering: {
-            title: "收藏排序方式",
-            type: "select",
-            options: [
-                { value: '-datetime_updated', text: '更新时间' },
-                { value: '-datetime_modifier', text: '收藏时间' },
-                { value: '-datetime_browse', text: '阅读时间' }
-            ],
-            default: '-datetime_updated',
-        },
         region: {
             title: "CDN线路",
             type: "select",
