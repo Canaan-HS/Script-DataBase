@@ -4,7 +4,7 @@ class CopyManga extends ComicSource {
 
     key = "copy_manga"
 
-    version = "1.4.3"
+    version = "1.4.1"
 
     minAppVersion = "1.6.0"
 
@@ -14,11 +14,16 @@ class CopyManga extends ComicSource {
 
     static defaultImageQuality = "1500"
 
-    static defaultApiUrl = 'api.copy2000.online'
+    static defaultApiUrl = 'api.2024manga.com'
 
     static searchApi = "/api/v3/search/comic"
 
     static contentType = "application/x-www-form-urlencoded;charset=utf-8"
+
+    static platform = "3"
+    static appVersion = "3.0.6"
+    static referer = "com.copymanga.app-3.0.6"
+    static source = "copyApp"
 
     static pageLimit = 30
     static chapterBatchSize = 100
@@ -28,9 +33,6 @@ class CopyManga extends ComicSource {
     static maxRetries = 5
 
     async getReqID() {
-        if (this.copyRegion === "0") {
-            return "";
-        }
         const reqIdUrl = "https://marketing.aiacgn.com/api/v2/adopr/query3/?format=json&ident=200100001";
         let reqId = "";
         try {
@@ -45,39 +47,15 @@ class CopyManga extends ComicSource {
     }
 
     get headers() {
-        let token = this.loadData("token");
-        let secret = "M2FmMDg1OTAzMTEwMzJlZmUwNjYwNTUwYTA1NjNhNTM=";
-        let now = new Date(Date.now());
-        let year = now.getFullYear();
-        let month = (now.getMonth() + 1).toString().padStart(2, '0');
-        let day = now.getDate().toString().padStart(2, '0');
-        let ts = Math.floor(now.getTime() / 1000).toString();
-        if (!token) {
-            token = "";
-        } else {
-            token = " " + token;
-        }
-        let sig = Convert.hmacString(
-            Convert.decodeBase64(secret),
-            Convert.encodeUtf8(ts),
-            "sha256"
-        );
         return {
-            "User-Agent": "COPY/3.0.6",
-            "source": "copyApp",
-            "deviceinfo": this.deviceinfo,
-            "dt": `${year}.${month}.${day}`,
-            "platform": "3",
-            "referer": "com.copymanga.app-3.0.6",
-            "version": "3.0.6",
-            "device": this.device,
-            "pseudoid": this.pseudoid,
+            "Authorization": this.loadData('token') ? `Token ${this.loadData('token')}` : '',
             "Accept": "application/json",
+            "webp": "1",
+            "platform": CopyManga.platform,
+            "version": CopyManga.appVersion,
+            "referer": CopyManga.referer,
+            "source": CopyManga.source,
             "region": this.copyRegion,
-            "authorization": `Token${token}`,
-            "umstring": "b4c89ca4104ea9a97750314d791520ac",
-            "x-auth-timestamp": ts,
-            "x-auth-signature": sig,
         }
     }
 
@@ -131,82 +109,9 @@ class CopyManga extends ComicSource {
         return this.loadSetting('image_quality') || this.defaultImageQuality
     }
 
-    get deviceinfo() {
-        let info = this.loadData("_deviceinfo");
-        if (!info) {
-            info = CopyManga.generateDeviceInfo();
-            this.saveData("_deviceinfo", info);
-        }
-        return info;
-    }
-
-    get device() {
-        let dev = this.loadData("_device");
-        if (!dev) {
-            dev = CopyManga.generateDevice();
-            this.saveData("_device", dev);
-        }
-        return dev;
-    }
-
-    get pseudoid() {
-        let pid = this.loadData("_pseudoid");
-        if (!pid) {
-            pid = CopyManga.generatePseudoid();
-            this.saveData("_pseudoid", pid);
-        }
-        return pid;
-    }
-
-    static generateDeviceInfo() {
-        return `${randomInt(1000000, 9999999)}V-${randomInt(1000, 9999)}`;
-    }
-
-    static generateDevice() {
-        function randCharA() {
-            return String.fromCharCode(65 + randomInt(0, 25));
-        }
-        function randDigit() {
-            return String.fromCharCode(48 + randomInt(0, 9));
-        }
-        return (
-            randCharA() +
-            randCharA() +
-            randDigit() +
-            randCharA() + "." +
-            randDigit() +
-            randDigit() +
-            randDigit() +
-            randDigit() +
-            randDigit() +
-            randDigit() + "." +
-            randDigit() +
-            randDigit() +
-            randDigit()
-        );
-    }
-
-    static generatePseudoid() {
-        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let pseudoid = '';
-        for (let i = 0; i < 16; i++) {
-            pseudoid += chars.charAt(randomInt(0, chars.length - 1));
-        }
-        return pseudoid;
-    }
-
-    resetDeviceInfo() {
-        this.deleteData("_deviceinfo");
-        this.deleteData("_device");
-        this.deleteData("_pseudoid");
-    }
-
     init() {
         this.author_path_word_dict = {}
-        this.refreshSearchApi().catch(() => {})
-        this.refreshAppApi().catch(() => {})
     }
-
 
 
     /// account
@@ -244,7 +149,7 @@ class CopyManga extends ComicSource {
             type: "singlePageWithMultiPart",
             load: async () => {
                 let dataStr = await Network.get(
-                    `${this.apiUrl}/api/v3/h5/homeIndex`,
+                    `https://api.copy2000.online/api/v3/h5/homeIndex`,
                     this.headers
                 )
 
@@ -356,14 +261,14 @@ class CopyManga extends ComicSource {
         load: async (category, param, options, page) => {
             let category_url;
             if (category === "排行" || param === "ranking") {
-                category_url = `${this.apiUrl}/api/v3/ranks?limit=${CopyManga.pageLimit}&offset=${(page - 1) * CopyManga.pageLimit}&_update=true&type=1&audience_type=${options[0]}&date_type=${options[1]}`
+                category_url = `https://api.copy2000.online/api/v3/ranks?limit=${CopyManga.pageLimit}&offset=${(page - 1) * CopyManga.pageLimit}&_update=true&type=1&audience_type=${options[0]}&date_type=${options[1]}`
             } else {
                 if (category !== undefined && category !== null) {
                     param = CopyManga.category_param_dict[category] || "";
                 }
                 let top = options[0] || "";
                 let ordering = (options[1] || "").replace("*", "-");
-                category_url = `${this.apiUrl}/api/v3/comics?limit=${CopyManga.pageLimit}&offset=${(page - 1) * CopyManga.pageLimit}&ordering=${ordering}&theme=${param}&top=${top}`
+                category_url = `https://api.copy2000.online/api/v3/comics?limit=${CopyManga.pageLimit}&offset=${(page - 1) * CopyManga.pageLimit}&ordering=${ordering}&theme=${param}&top=${top}`
             }
 
 
@@ -445,11 +350,8 @@ class CopyManga extends ComicSource {
                     q_type = options[0];
                 }
                 keyword = encodeURIComponent(keyword)
-                let search_url = this.loadSetting('search_api') === "webAPI"
-                    ? `${this.apiUrl}${CopyManga.searchApi}`
-                    : `${this.apiUrl}/api/v3/search/comic`
                 res = await Network.get(
-                    `${search_url}?limit=${CopyManga.pageLimit}&offset=${(page - 1) * CopyManga.pageLimit}&q=${keyword}&q_type=${q_type}`,
+                    `${this.apiUrl}${CopyManga.searchApi}?limit=${CopyManga.pageLimit}&offset=${(page - 1) * CopyManga.pageLimit}&q=${keyword}&q_type=${q_type}`,
                     this.headers
                 )
             }
@@ -483,9 +385,8 @@ class CopyManga extends ComicSource {
         addOrDelFavorite: async (comicId, folderId, isAdding) => {
             let is_collect = isAdding ? 1 : 0
             let token = this.loadData("token");
-            let reqId = await this.getReqID();
             let comicData = await Network.get(
-                `${this.apiUrl}/api/v3/comic2/${comicId}?in_mainland=true&request_id=${reqId}&platform=3`,
+                `${this.apiUrl}/api/v3/comic2/${comicId}?platform=3`,
                 this.headers
             )
             if (comicData.status !== 200) {
@@ -597,10 +498,9 @@ class CopyManga extends ComicSource {
                 }
                 return JSON.parse(res.body).results.collect != null;
             }
-            let reqId = await this.getReqID();
             let results = await Promise.all([
                 Network.get(
-                    `${this.apiUrl}/api/v3/comic2/${id}?in_mainland=true&request_id=${reqId}&platform=3`,
+                    `${this.apiUrl}/api/v3/comic2/${id}?platform=3`,
                     this.headers
                 ),
                 getFavoriteStatus.bind(this)(id)
@@ -610,21 +510,7 @@ class CopyManga extends ComicSource {
                 throw `Invalid status code: ${results[0].status}`;
             }
 
-            let body = JSON.parse(results[0].body);
-            if (body.code === 210) {
-                this.resetDeviceInfo();
-                reqId = await this.getReqID();
-                let retryResult = await Network.get(
-                    `${this.apiUrl}/api/v3/comic2/${id}?in_mainland=true&request_id=${reqId}&platform=3`,
-                    this.headers
-                );
-                if (retryResult.status === 200) {
-                    body = JSON.parse(retryResult.body);
-                } else {
-                    throw `Invalid status code: ${retryResult.status}`;
-                }
-            }
-            let data = body.results;
+            let data = JSON.parse(results[0].body).results;
             let comicData = data.comic;
 
             let title = comicData.name;
@@ -664,24 +550,28 @@ class CopyManga extends ComicSource {
                 try {
                     let reqId = await this.getReqID();
                     res = await Network.get(
-                        `${this.apiUrl}/api/v3/comic/${comicId}/chapter/${epId}?in_mainland=true&request_id=${reqId}`,
+                        `${this.apiUrl}/api/v3/comic/${comicId}/chapter/${epId}?platform=3&_update=true&request_id=${reqId}`,
                         this.headers
                     );
 
                     if (res.status === 210) {
-                        let responseBody = JSON.parse(res.body);
-                        if (responseBody.code === 210 && responseBody.message && responseBody.message.includes("破解版本")) {
-                            this.resetDeviceInfo();
-                            throw "Retry";
+                        let waitTime = 40000;
+                        try {
+                            let responseBody = JSON.parse(res.body);
+                            if (
+                                responseBody.message &&
+                                responseBody.message.includes("Expected available in")
+                            ) {
+                                let match = responseBody.message.match(/(\d+)\s*seconds/);
+                                if (match && match[1]) {
+                                    waitTime = parseInt(match[1]) * 1000;
+                                }
+                            }
+                        } catch (e) {
                         }
-                        if (responseBody.message && responseBody.message.includes("Expected available in")) {
-                            let match = responseBody.message.match(/(\d+)\s*seconds/);
-                            let waitTime = match && match[1] ? parseInt(match[1]) * 1000 : 40000;
-                            console.log(`Chapter${epId} access too frequent, waiting ${waitTime / 1000}s`);
-                            await new Promise((resolve) => setTimeout(resolve, waitTime));
-                            throw "Retry";
-                        }
-                        throw `Invalid status code: 210`;
+                        console.log(`Chapter${epId} access too frequent, waiting ${waitTime / 1000}s`);
+                        await new Promise((resolve) => setTimeout(resolve, waitTime));
+                        throw "Retry";
                     }
 
                     if (res.status !== 200) {
@@ -850,18 +740,9 @@ class CopyManga extends ComicSource {
             title: "收藏排序方式",
             type: "select",
             options: [
-                {
-                    value: '-datetime_updated',
-                    text: '更新时间'
-                },
-                {
-                    value: '-datetime_modifier',
-                    text: '收藏时间'
-                },
-                {
-                    value: '-datetime_browse',
-                    text: '阅读时间'
-                }
+                { value: '-datetime_updated', text: '更新时间' },
+                { value: '-datetime_modifier', text: '收藏时间' },
+                { value: '-datetime_browse', text: '阅读时间' }
             ],
             default: '-datetime_updated',
         },
@@ -869,14 +750,8 @@ class CopyManga extends ComicSource {
             title: "CDN线路",
             type: "select",
             options: [
-                {
-                    value: "1",
-                    text: '大陆线路'
-                },
-                {
-                    value: "0",
-                    text: '海外线路'
-                },
+                { value: "0", text: '海外线路' },
+                { value: "1", text: '大陆线路' },
             ],
             default: CopyManga.defaultCopyRegion,
         },
@@ -884,35 +759,11 @@ class CopyManga extends ComicSource {
             title: "图片品质",
             type: "select",
             options: [
-                {
-                    value: '800',
-                    text: '低 (800)'
-                },
-                {
-                    value: '1200',
-                    text: '中 (1200)'
-                },
-                {
-                    value: '1500',
-                    text: '高 (1500)'
-                }
+                { value: '800', text: '低 (800)' },
+                { value: '1200', text: '中 (1200)' },
+                { value: '1500', text: '高 (1500)' }
             ],
             default: CopyManga.defaultImageQuality,
-        },
-        search_api: {
-            title: "搜索方式",
-            type: "select",
-            options: [
-                {
-                    value: 'baseAPI',
-                    text: '基础API'
-                },
-                {
-                    value: 'webAPI',
-                    text: '网页端API'
-                }
-            ],
-            default: 'baseAPI',
         },
         base_url: {
             title: "API地址",
@@ -920,50 +771,8 @@ class CopyManga extends ComicSource {
             validator: '^(?!:\\/\\/)(?=.{1,253})([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}$',
             default: CopyManga.defaultApiUrl,
         },
-        clear_device_info: {
-            title: "清除设备信息",
-            type: "callback",
-            buttonText: "点击清除设备信息",
-            callback: () => {
-                this.resetDeviceInfo();
-                this.refreshAppApi();
-            }
-        },
     }
 
-    async refreshSearchApi() {
-        let res = await Network.get("https://www.copy20.com/search", {});
-        if (res.status === 200) {
-            let match = res.body.match(/const countApi = "([^"]+)"/);
-            if (match && match[1]) {
-                CopyManga.searchApi = match[1];
-            }
-        }
-    }
-
-    async refreshAppApi() {
-        const res = await Network.get(
-            "https://api.copy-manga.com/api/v3/system/network2?platform=3",
-            {}
-        );
-        if (res.status === 200) {
-            let data = JSON.parse(res.body);
-            if (
-                data.results &&
-                data.results.api &&
-                data.results.api[0] &&
-                data.results.api[0][0]
-            ) {
-                this.settings.base_url = data.results.api[0][0];
-            }
-        }
-    }
-
-    /**
-     * Check if the current app version is after the target version
-     * @param target {string} target version
-     * @returns {boolean} true if the current app version is after the target version
-     */
     isAppVersionAfter(target) {
         let current = APP.version
         let targetArr = target.split('.')
