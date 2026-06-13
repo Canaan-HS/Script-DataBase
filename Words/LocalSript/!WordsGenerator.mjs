@@ -13,14 +13,14 @@ import { log } from "console";
  * @param {boolean} LengthSort - 是否使用長度來排序, 否的話使用 字母
  * @param {boolean} SimilarExcl - 排除 key 和 value 類似的, 會另外輸出類似的
  */
-async function DataCleaning({
+async function dataCleaning({
     Data,
-    Sort=true,
-    Merge=false,
-    MergeName="All_Words",
-    LengthSort=true,
-    SimilarExcl=false
-}={}) {
+    Sort = true,
+    Merge = false,
+    MergeName = "All_Words",
+    LengthSort = true,
+    SimilarExcl = false
+} = {}) {
     const Read_Data = {}, Similar = {};
 
     for (const Path of Data) { // 讀取所有傳入的數據
@@ -139,26 +139,24 @@ async function DataCleaning({
 /* ======================================================= */
 
 // 後傳入的優先級越高
-// DataCleaning({
-    // Data: ["!Exclude"]
+// dataCleaning({
+// Data: ["!Exclude"]
 // })
 
-async function GeneratorWord() {
-    await DataCleaning({ // 個別處理
-        LengthSort: false,
-        Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
-    });
+async function generatorWord() {
+    const Data = ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"];
 
-    await DataCleaning({ // 完整 合併處理
-        Merge: true,
-        Data: ["Beautify", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"]
-    });
+    // 個別處理
+    await dataCleaning({ LengthSort: false, Data });
 
-    DataCleaning({ // 精選 合併處理
+    // 完整 合併處理
+    await dataCleaning({ Merge: true, Data });
+
+    dataCleaning({ // 精選 合併處理
         Merge: true,
         MergeName: "Curated_Words",
         Data: ["Beautify", "Parody", "Character", "Long", "Language", "Tags"]
     });
 }
 
-GeneratorWord();
+generatorWord();
