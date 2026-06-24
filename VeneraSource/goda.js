@@ -273,11 +273,12 @@ class Goda extends ComicSource {
         decodeStr(rawStr, domain) {
             const s1 = rawStr.slice(3, -2);
             const tl = s1.length - 5;
-            const a = tl / 3 | 0;
-            const b = tl - a * 2;
-            const p = s1.slice(0, a);
-            const m = s1.slice(a + 2, a + 2 + b);
-            const s = s1.slice(a + 2 + b + 3);
+            const a = Math.floor(tl / 3);
+            const b = Math.floor((tl - a) / 2);
+            const c = tl - a - b;
+            const p = s1.slice(0, b);
+            const m = s1.slice(b + 2, b + 2 + c);
+            const s = s1.slice(b + 2 + c + 3);
             let r = '';
             for (let i = 0, j = 0; i < (s + p + m).length; i += 7, j++) {
                 const c = (s + p + m).substring(i, i + 7);
