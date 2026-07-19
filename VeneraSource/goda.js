@@ -5,7 +5,7 @@ class Goda extends ComicSource {
 
     key = "goda"
 
-    version = "1.0.1"
+    version = "1.0.2"
 
     minAppVersion = "1.4.0"
 
@@ -248,49 +248,208 @@ class Goda extends ComicSource {
         enableTagsSuggestions: false,
     }
 
-    imgDataDecode = {
-        T: '_-9876543210abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-        S: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_',
-        t: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
-        b64(s) {
-            s = s.replace(/=+$/, '');
-            const b = [];
-            for (let i = 0; i < s.length; i += 4) {
-                const d = [this.t.indexOf(s[i]), this.t.indexOf(s[i + 1]), this.t.indexOf(s[i + 2]), this.t.indexOf(s[i + 3])];
-                b.push(d[0] << 2 | d[1] >> 4);
-                if (d[2] !== -1) b.push((d[1] & 15) << 4 | d[2] >> 2);
-                if (d[3] !== -1) b.push((d[2] & 3) << 6 | d[3]);
+    imgDataDecode = (() => {
+        const PREFIX = 'J7r';
+        const SUFFIX = 'nQ';
+        const MARKER1 = 'kD';
+        const MARKER2 = 'W4s';
+        const GROUP = 7;
+
+        const PREFIX_LEN = PREFIX.length;
+        const SUFFIX_LEN = SUFFIX.length;
+        const MARKER1_LEN = MARKER1.length;
+        const MARKER2_LEN = MARKER2.length;
+
+        const CUSTOM = '_-9876543210abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+        // 自訂字母表字元碼 -> base64 6-bit 數值
+        let customToValue = null;
+
+        // 有原生 TextDecoder 就重複使用同一個 instance;沒有就是 null,
+        // 走 fallback 手刻解碼。
+        let textDecoder = null;
+        let hasTextDecoder = false;
+        let inited = false;
+
+        function init() {
+            if (inited) return;
+            inited = true;
+
+            customToValue = new Int16Array(128).fill(-1);
+            for (let i = 0; i < CUSTOM.length; i++) {
+                customToValue[CUSTOM.charCodeAt(i)] = i;
             }
-            let r = '';
-            for (let i = 0; i < b.length; i++) {
-                if (b[i] < 128) r += String.fromCharCode(b[i]);
-                else if (b[i] < 224) r += String.fromCharCode((b[i] & 31) << 6 | b[++i] & 63);
-                else if (b[i] < 240) r += String.fromCharCode((b[i] & 15) << 12 | (b[++i] & 63) << 6 | b[++i] & 63);
-                else r += String.fromCharCode((b[i] & 7) << 18 | (b[++i] & 63) << 12 | (b[++i] & 63) << 6 | b[++i] & 63);
+
+            try {
+                textDecoder = new TextDecoder('utf-8');
+                hasTextDecoder = true;
+            } catch (e) {
+                // Flutter JS bridge 若是 QuickJS 之類的輕量引擎,可能沒有
+                textDecoder = null;
+                hasTextDecoder = false;
             }
-            return r;
-        },
-        decodeStr(rawStr, domain) {
-            const s1 = rawStr.slice(3, -2);
-            const tl = s1.length - 5;
-            const a = Math.floor(tl / 3);
-            const b = Math.floor((tl - a) / 2);
-            const c = tl - a - b;
-            const p = s1.slice(0, b);
-            const m = s1.slice(b + 2, b + 2 + c);
-            const s = s1.slice(b + 2 + c + 3);
-            let r = '';
-            for (let i = 0, j = 0; i < (s + p + m).length; i += 7, j++) {
-                const c = (s + p + m).substring(i, i + 7);
-                r += j & 1 ? [...c].reverse().join('') : c;
-            }
-            let mp = '';
-            for (let i = 0; i < r.length; i++) mp += this.S[this.T.indexOf(r[i])];
-            const pad = '=='.substring(0, (4 - mp.length % 4) % 4);
-            const arr = JSON.parse(this.b64((mp + pad).replace(/-/g, '+').replace(/_/g, '/')));
-            return domain ? arr.map(v => domain + v.url) : arr.map(v => v.url);
         }
-    }
+
+        /*
+            Fallback: 手刻 UTF-8 -> JS 字串
+            4-byte 序列(codepoint > 0xFFFF)要轉成 surrogate pair,
+            不能直接 String.fromCharCode(codepoint)。
+        */
+        function decodeUTF8Fallback(bytes) {
+            let out = '';
+            const chunk = [];
+            const FLUSH_SIZE = 4096; // 避免 fromCharCode.apply 參數過多
+
+            const flush = () => {
+                if (chunk.length) {
+                    out += String.fromCharCode.apply(null, chunk);
+                    chunk.length = 0;
+                }
+            };
+
+            const n = bytes.length;
+            for (let i = 0; i < n;) {
+                const c = bytes[i++];
+
+                if (c < 0x80) {
+                    chunk.push(c);
+                } else if (c < 0xE0) {
+                    chunk.push(((c & 0x1F) << 6) | (bytes[i++] & 0x3F));
+                } else if (c < 0xF0) {
+                    chunk.push(
+                        ((c & 0x0F) << 12) |
+                        ((bytes[i++] & 0x3F) << 6) |
+                        (bytes[i++] & 0x3F)
+                    );
+                } else {
+                    let cp =
+                        ((c & 0x07) << 18) |
+                        ((bytes[i++] & 0x3F) << 12) |
+                        ((bytes[i++] & 0x3F) << 6) |
+                        (bytes[i++] & 0x3F);
+                    cp -= 0x10000;
+                    chunk.push(0xD800 + (cp >> 10), 0xDC00 + (cp & 0x3FF));
+                }
+
+                if (chunk.length >= FLUSH_SIZE) flush();
+            }
+            flush();
+            return out;
+        }
+
+        function bytesToString(bytes) {
+            return hasTextDecoder ? textDecoder.decode(bytes) : decodeUTF8Fallback(bytes);
+        }
+
+        /**
+         * @param {string} rawStr 混淆後的原始字串
+         * @param {string} [domain] 若提供,回傳的 url 會補上這個前綴
+         * @returns {string[]}
+         */
+        function decodeStr(rawStr, domain) {
+            init();
+
+            if (
+                typeof rawStr !== 'string' ||
+                !rawStr.startsWith(PREFIX) ||
+                !rawStr.endsWith(SUFFIX)
+            ) {
+                throw '未知圖片資料格式';
+            }
+
+            const body = rawStr.slice(PREFIX_LEN, rawStr.length - SUFFIX_LEN);
+
+            const payloadLen = body.length - MARKER1_LEN - MARKER2_LEN;
+            if (payloadLen <= 0) throw '未知圖片資料格式';
+
+            const len1 = Math.floor(payloadLen / 3);
+            const len2 = Math.floor((payloadLen - len1) / 2);
+            const len3 = payloadLen - len1 - len2;
+
+            const segAEnd = len2;
+            const marker1Start = segAEnd;
+            const segBStart = marker1Start + MARKER1_LEN;
+            const segBEnd = segBStart + len3;
+            const marker2Start = segBEnd;
+            const segCStart = marker2Start + MARKER2_LEN;
+
+            if (
+                body.slice(marker1Start, segBStart) !== MARKER1 ||
+                body.slice(marker2Start, segCStart) !== MARKER2 ||
+                body.length - segCStart !== len1
+            ) {
+                throw '未知圖片資料格式';
+            }
+
+            const mixed =
+                body.slice(segCStart) +
+                body.slice(0, segAEnd) +
+                body.slice(segBStart, segBEnd);
+
+            const n = mixed.length;
+            const codes = new Uint8Array(n);
+
+            for (let i = 0, w = 0, block = 0; i < n; i += GROUP, block++) {
+                const end = Math.min(i + GROUP, n);
+                if (block & 1) {
+                    for (let j = end - 1; j >= i; j--) codes[w++] = mixed.charCodeAt(j);
+                } else {
+                    for (let j = i; j < end; j++) codes[w++] = mixed.charCodeAt(j);
+                }
+            }
+
+            const q = n >> 2;
+            const r = n & 3;
+            if (r === 1) throw '無效圖片資料';
+
+            const bytesLen = q * 3 + (r === 0 ? 0 : r - 1);
+            const bytes = new Uint8Array(bytesLen);
+            const map = customToValue;
+
+            let bi = 0;
+            let i = 0;
+            const fullEnd = q * 4;
+
+            for (; i < fullEnd; i += 4) {
+                const a = map[codes[i]];
+                const b = map[codes[i + 1]];
+                const c = map[codes[i + 2]];
+                const d = map[codes[i + 3]];
+                if ((a | b | c | d) < 0) throw '無效圖片資料';
+
+                bytes[bi++] = (a << 2) | (b >> 4);
+                bytes[bi++] = ((b & 15) << 4) | (c >> 2);
+                bytes[bi++] = ((c & 3) << 6) | d;
+            }
+
+            if (r === 2) {
+                const a = map[codes[i]];
+                const b = map[codes[i + 1]];
+                if ((a | b) < 0) throw '無效圖片資料';
+                bytes[bi++] = (a << 2) | (b >> 4);
+            } else if (r === 3) {
+                const a = map[codes[i]];
+                const b = map[codes[i + 1]];
+                const c = map[codes[i + 2]];
+                if ((a | b | c) < 0) throw '無效圖片資料';
+                bytes[bi++] = (a << 2) | (b >> 4);
+                bytes[bi++] = ((b & 15) << 4) | (c >> 2);
+            }
+
+            const json = bytesToString(bytes);
+            const arr = JSON.parse(json);
+
+            const out = new Array(arr.length);
+            if (domain) {
+                for (let k = 0; k < arr.length; k++) out[k] = domain + arr[k].url;
+            } else {
+                for (let k = 0; k < arr.length; k++) out[k] = arr[k].url;
+            }
+            return out;
+        }
+
+        return { decodeStr };
+    })()
 
     /// single comic related
     comic = {
