@@ -275,7 +275,7 @@ class Goda extends ComicSource {
             if (inited) return;
             inited = true;
 
-            customToValue = new Int16Array(128).fill(-1);
+            customToValue = new Int16Array(256).fill(-1);
             for (let i = 0; i < CUSTOM.length; i++) {
                 customToValue[CUSTOM.charCodeAt(i)] = i;
             }
@@ -284,7 +284,7 @@ class Goda extends ComicSource {
                 textDecoder = new TextDecoder('utf-8');
                 hasTextDecoder = true;
             } catch (e) {
-                // Flutter JS bridge 若是 QuickJS 之類的輕量引擎,可能沒有
+                // Flutter JS bridge 若是 QuickJS 之類的輕量引擎, 可能沒有 TextDecoder
                 textDecoder = null;
                 hasTextDecoder = false;
             }
