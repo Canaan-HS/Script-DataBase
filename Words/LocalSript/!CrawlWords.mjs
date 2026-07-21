@@ -55,9 +55,8 @@ async function dataCrawl(Data) {
     const All_Words = await File.Read("../All_Words.json");
     const CNtoTW = OpenCC.Converter({ from: "cn", to: "tw" });
 
-    const localKeys = new Set( // 將全部字典 和 排除的字典 合併, 取得所有 key 值
-        Object.keys(Object.assign(All_Words, Exclude))
-    );
+    // 將全部字典 和 排除的字典 合併
+    const localKeys = Object.assign(All_Words, Exclude);
 
     for (const data of Data) {
         const newData = {}; // 緩存遠端新字典
@@ -91,7 +90,7 @@ async function dataCrawl(Data) {
 
                 // 過濾已經擁有的 localKeys
                 const filtered = Object.fromEntries(
-                    Object.entries(dict).filter(([key]) => !localKeys.has(key))
+                    Object.entries(dict).filter(([key]) => !localKeys[key])
                 );
 
                 // 最後合併到新字典
