@@ -60,9 +60,9 @@ async function dataCrawl(Data) {
 
     for (const data of Data) {
         const newData = {}; // 緩存遠端新字典
-        const { Name, Uri } = data; // 解構傳遞的數據
+        const { name, uri } = data; // 解構傳遞的數據
 
-        for (const type of Uri) { // 取得數據類型
+        for (const type of uri) { // 取得數據類型
             try {
                 const remote = await axios.get(`https://raw.githubusercontent.com/EhTagTranslation/Database/master/database/${type}.md`);
                 const html = marked.marked(remote.data); // 將 md 數據解析為 html
@@ -83,7 +83,7 @@ async function dataCrawl(Data) {
                             && key.toLowerCase() != value.toLowerCase() // 排除 key 和 value 相同
                         ) {
                             const noSpaceValue = value.replace(" | ", "|");
-                            dict[key] = Name == "Group" ? noSpaceValue : CNtoTW(noSpaceValue); // 轉換繁體 (Group 會有日文不轉換)
+                            dict[key] = name === "Group" ? noSpaceValue : CNtoTW(noSpaceValue); // 轉換繁體 (Group 會有日文不轉換)
                         }
                     }
                 });
@@ -102,16 +102,17 @@ async function dataCrawl(Data) {
 
         // 將新數據輸出到, 緩存硬碟
         if (Object.keys(newData).length > 0) {
-            File.Write(newData, `R:/New_${Name}.json`);
+            File.Write(newData, `R:/New_${name}.json`);
         } else {
-            console.log(`${Name} 無新數據`);
+            console.log(`${name} 無新數據`);
         }
     }
 }
 
 dataCrawl([
-    { Name: "Character", Uri: ["character"] },
-    { Name: "Parody", Uri: ["parody"] },
-    { Name: "Group", Uri: ["group"] },
-    { Name: "Tags", Uri: ["other", "mixed", "male", "female"] },
+    { name: "Character", uri: ["character"] },
+    { name: "Cosplayer", uri: ["cosplayer"] },
+    { name: "Parody", uri: ["parody"] },
+    { name: "Group", uri: ["group"] },
+    { name: "Tags", uri: ["other", "mixed", "male", "female"] },
 ]);
