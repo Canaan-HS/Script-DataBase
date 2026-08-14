@@ -10,5 +10,11 @@
         "fileName": "manwaba.js",
         "key": "manwaba",
         "version": "1.0.4"
+    },
+    {
+        "name": "漫小肆",
+        "fileName": "mxs.js",
+        "key": "mxs",
+        "version": "1.0.1"
     }
 ]
