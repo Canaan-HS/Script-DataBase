@@ -5,7 +5,7 @@ class Goda extends ComicSource {
 
     key = "goda"
 
-    version = "1.0.2"
+    version = "1.0.3"
 
     minAppVersion = "1.4.0"
 
@@ -15,17 +15,23 @@ class Goda extends ComicSource {
         domains: {
             title: "域名",
             type: "input",
-            default: "godamh.com"
+            default: "manhuafree.com"
         },
         api: {
             title: "API域名",
             type: "input",
             default: "v2.apikk.top"
         },
-        image: {
-            title: "图片域名",
-            type: "input",
-            default: "f40-1-4.g-mh.online"
+        image_domain: {
+            title: "圖片域名",
+            type: "select",
+            options: [
+                { value: "c-nd2-1.6wm.top", text: "c-nd2-1" },
+                { value: "c-nd3-1.6wm.top", text: "c-nd3-1" },
+                { value: "t-nd2-1.6wm.top", text: "t-nd2-1" },
+                { value: "t-nd3-1.6wm.top", text: "t-nd3-1" }
+            ],
+            default: "t-nd3-1.6wm.top",
         }
     }
 
@@ -38,18 +44,17 @@ class Goda extends ComicSource {
     }
 
     get imageUrl() {
-        return `https://${this.loadSetting("image")}`;
+        return `https://${this.loadSetting("image_domain")}`;
     }
 
     get headers() {
         return {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
             "Referer": this.baseUrl
         };
     }
 
     parseComics(doc) {
-        console.warn(doc)
         const result = [];
         for (let item of doc.querySelectorAll(".pb-2")) {
             result.push(new Comic({
