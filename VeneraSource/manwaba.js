@@ -333,6 +333,30 @@ class ManWaBa extends ComicSource {
     },
   };
 
+  imgDataDecode = (() => {
+    const keyBytes = Convert.encodeUtf8('0B6666A0-BB59-1381-B746-a0E4C9AC').slice(0, 32);
+    const getMimeType = (view) => {
+        if (view[0] === 0xFF && view[1] === 0xD8 && view[2] === 0xFF) return 'image/jpeg';
+        if (view[0] === 0x89 && view[1] === 0x50 && view[2] === 0x4E && view[3] === 0x47) return 'image/png';
+        if (view[0] === 0x47 && view[1] === 0x49 && view[2] === 0x46) return 'image/gif';
+        if (view[0] === 0x52 && view[1] === 0x49 && view[2] === 0x46 && view[3] === 0x46) return 'image/webp';
+        return null;
+    };
+    return (arrayBuffer, base64 = false) => {
+      const view = new Uint8Array(arrayBuffer);
+
+      // 是正常圖片
+      if (getMimeType(view)) return arrayBuffer;
+
+      // 是加密圖片
+      const iv = arrayBuffer.slice(0, 16);
+      const ciphertext = arrayBuffer.slice(16);
+      const decryptedBuffer = Convert.decryptAesCbc(ciphertext, keyBytes, iv);
+
+      return base64 ? `data:${getMimeType(new Uint8Array(decryptedBuffer))};base64,${Convert.encodeBase64(decryptedBuffer)}` : decryptedBuffer
+    }
+  })();
+
   /// single comic related
   comic = {
     /**
@@ -341,44 +365,36 @@ class ManWaBa extends ComicSource {
      * @returns {Promise<ComicDetails>}s
      */
     loadInfo: async (id) => {
-      let url = `${this.api}/comic/${id}`;
-      let data = await this.fetchJson(url, { payload: undefined }).then(
-        (res) => res.data
-      );
-      this.logger.warn(`loadInfo: ${data}`);
-      let chapterId = data.id;
-      let chapterApi = `${this.api}/comic/chapter`;
-      let params = {
-        comicId: chapterId,
-        page: 1,
-        pageSize: 1,
-      };
-      let pageRes = await this.fetchJson(chapterApi, { params });
-      let total = pageRes.pagination.total;
+      // 獲取漫畫詳情
+      let {
+        title, cover, status, author, tags, intro, editTime
+      } = await this.fetchJson(`${this.api}/comic/${id}`, { payload: undefined }).then(res => res.data);
 
-      let chapterRes = await this.fetchJson(chapterApi, {
-        params: {
-          ...params,
-          pageSize: total,
-        },
-      });
-      let chapterList = chapterRes.data;
-      let chapters = new Map();
-      chapterList.forEach((item) => {
-        chapters.set(item.id.toString(), item.title.toString());
-      });
+      // 獲取漫畫封面數據 (不支援 base64 顯示)
+      // const coverRaw = await Network.fetchBytes("GET", cover);
+      // if (coverRaw.status === 200) cover = this.imgDataDecode(coverRaw.body, true);
+
+      const chapterApi = `${this.api}/comic/chapter`;
+      const params = { comicId: id, pageSize: 1 };
+
+      // 首次請求獲取總頁數
+      params.pageSize = await this.fetchJson(chapterApi, { params }).then(res => res.pagination.total);
+
+      // 根據總頁數再次請求獲取所有章節
+      const fullChapter = await this.fetchJson(chapterApi, { params }).then(res => res.data);
+      const chapters = new Map(fullChapter.map(({ id, title }) => [id.toString(), title]));
 
       return new ComicDetails({
-        title: data.title.toString(),
-        subTitle: data.author.toString(),
-        cover: data.cover,
+        title,
+        cover,
+        subTitle: author,
         tags: {
-          类型: data.tags.split(","),
-          状态: data.status == 0 ? "连载中" : "已完结",
+          類型: tags.split(","),
+          狀態: status === 0 ? "連載中" : "已完結",
         },
         chapters,
-        description: data.intro,
-        updateTime: new Date(data.editTime * 1000).toLocaleDateString(),
+        description: intro,
+        updateTime: new Date(editTime * 1000).toLocaleDateString(),
       });
     },
     /**
@@ -412,26 +428,10 @@ class ManWaBa extends ComicSource {
         images: imageRes.map((item) => item.url),
       };
     },
-    _keyBytes: Convert.encodeUtf8('0B6666A0-BB59-1381-B746-a0E4C9AC').slice(0, 32),
     onImageLoad: (url, comicId, epId) => {
       return {
         headers: this.headers,
-        onResponse: (arrayBuffer) => {
-          const view = new Uint8Array(arrayBuffer);
-
-          const isImage = (view[0] === 0xFF && view[1] === 0xD8) || // JPEG
-            (view[0] === 0x89 && view[1] === 0x50) || // PNG
-            (view[0] === 0x47 && view[1] === 0x49) || // GIF
-            (view[0] === 0x52 && view[1] === 0x49); // WEBP/RIFF
-
-          if (isImage) return arrayBuffer;
-
-          const iv = arrayBuffer.slice(0, 16);
-          const ciphertext = arrayBuffer.slice(16);
-
-          const decryptedBuffer = Convert.decryptAesCbc(ciphertext, this.comic._keyBytes, iv);
-          return decryptedBuffer
-        }
+        onResponse: this.imgDataDecode,
       }
     }
   };
