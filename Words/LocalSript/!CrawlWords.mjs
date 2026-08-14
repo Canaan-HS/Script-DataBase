@@ -77,16 +77,19 @@ async function dataCrawl(Data) {
                     const value = $(td[1]).text().trim();
 
                     if (key && value) {
-                        if (
-                            !/^\d+$/.test(key) // 排除 key 都是數字
-                            && key.length > 2 // 排除 key 長度小於 2
-                            && key.toLowerCase() != value.toLowerCase() // 排除 key 和 value 相同
-                        ) {
-                            const noSpaceValue = value.replace(" | ", "|");
-                            dict[key] = name === "Group" ? noSpaceValue : CNtoTW(noSpaceValue); // 轉換繁體 (Group 會有日文不轉換)
-                        }
+                        if (/^\d+$/.test(key)) return; // 排除 key 都是數字
+                        if (key.length < 3) return; // 排除 key 長度小於 3
+                        if (key.toLowerCase() === value.toLowerCase()) return; // 排除 key 和 value 相同
+
+                        const noSpaceValue = value.replace(" | ", "|");
+                        dict[key] = name === "Group" ? noSpaceValue : CNtoTW(noSpaceValue); // 轉換繁體 (Group 會有日文不轉換)
                     }
                 });
+
+                /*
+                    ! 不建議使用, 目前的字典已繁中翻譯部份客製化, 使用了話需要人工比對
+                    比對 value: Object.entries(dict).filter(([key, value]) => localKeys[key] !== value)
+                */
 
                 // 過濾已經擁有的 localKeys
                 const filtered = Object.fromEntries(
