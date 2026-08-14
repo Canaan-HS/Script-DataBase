@@ -71,7 +71,7 @@ class MXS extends ComicSource {
             }
         },
 
-        autoSetDomain: {
+        autoTestDomainn: {
             title: "自動測試域名",
             type: "callback",
             buttonText: "測試",
