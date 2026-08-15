@@ -16,7 +16,7 @@ class ManWaBa extends ComicSource {
   url = "https://gitlab.com/Canaan-HS/database/-/raw/main/VeneraSource/manwaba.js";
 
   //修改域名不能用问题
-  api = "https://mwuu.cc/api";
+  api = "https://manwaye.cc/api";
 
   init() {
     /**
