@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "axios": "^1.19.0",
+    "cheerio": "^1.2.0",
+    "marked": "^18.0.9",
+    "opencc-js": "^1.4.1"
+  }
+}
