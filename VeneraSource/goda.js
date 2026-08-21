@@ -18,12 +18,17 @@ class Goda extends ComicSource {
             default: "manhuafree.com"
         },
         api: {
-            title: "API域名",
+            title: "GoDa API",
             type: "input",
             default: "v2.apikk.top"
         },
+        hip_api: {
+            title: "Hip API",
+            type: "input",
+            default: "hipapi1.s3file.top"
+        },
         image_domain: {
-            title: "圖片域名",
+            title: "GoDa 圖片域名",
             type: "select",
             options: [
                 { value: "c-nd2-1.6wm.top", text: "c-nd2-1" },
@@ -32,6 +37,17 @@ class Goda extends ComicSource {
                 { value: "t-nd3-1.6wm.top", text: "t-nd3-1" }
             ],
             default: "t-nd3-1.6wm.top",
+        },
+        hip_image_domain: {
+            title: "Hip 圖片域名",
+            type: "select",
+            options: [
+                { value: "hip-tx-1.s3imgs.top", text: "hip-tx-1" },
+                { value: "hip-tx-s1.s3imgs.top", text: "hip-tx-s1" },
+                { value: "hip-cf-1.s3imgs.top", text: "hip-cf-1" },
+                { value: "hip-cf-s1.s3imgs.top", text: "hip-cf-s1" }
+            ],
+            default: "hip-tx-1.s3imgs.top"
         }
     }
 
@@ -43,8 +59,16 @@ class Goda extends ComicSource {
         return `https://${this.loadSetting("api")}/api/v2`;
     }
 
+    get hipApiUrl() {
+        return `https://${this.loadSetting("hip_api")}`;
+    }
+
     get imageUrl() {
         return `https://${this.loadSetting("image_domain")}`;
+    }
+
+    get hipImageUrl() {
+        return `https://${this.loadSetting("hip_image_domain")}`;
     }
 
     get headers() {
@@ -254,16 +278,12 @@ class Goda extends ComicSource {
     }
 
     imgDataDecode = (() => {
-        const PREFIX = 'J7r';
-        const SUFFIX = 'nQ';
-        const MARKER1 = 'kD';
-        const MARKER2 = 'W4s';
         const GROUP = 7;
 
-        const PREFIX_LEN = PREFIX.length;
-        const SUFFIX_LEN = SUFFIX.length;
-        const MARKER1_LEN = MARKER1.length;
-        const MARKER2_LEN = MARKER2.length;
+        const VARIANTS = [
+            { PREFIX: 'J7r', SUFFIX: 'nQ', MARKER1: 'kD', MARKER2: 'W4s' }, // goda
+            { PREFIX: 'qM9', SUFFIX: 'Z7', MARKER1: 'Vx', MARKER2: 'pL0' }, // hip
+        ];
 
         const CUSTOM = '_-9876543210abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -354,17 +374,28 @@ class Goda extends ComicSource {
         function decodeStr(rawStr, domain) {
             init();
 
-            if (
-                typeof rawStr !== 'string' ||
-                !rawStr.startsWith(PREFIX) ||
-                !rawStr.endsWith(SUFFIX)
-            ) {
+            if (typeof rawStr !== 'string') {
                 throw '未知圖片資料格式';
             }
 
-            const body = rawStr.slice(PREFIX_LEN, rawStr.length - SUFFIX_LEN);
+            // 依前後綴自動偵測格式
+            let fmt = null;
+            for (let i = 0; i < VARIANTS.length; i++) {
+                const t = VARIANTS[i];
+                if (
+                    rawStr.slice(0, t.PREFIX.length) === t.PREFIX &&
+                    rawStr.slice(rawStr.length - t.SUFFIX.length) === t.SUFFIX
+                ) {
+                    fmt = t;
+                    break;
+                }
+            }
 
-            const payloadLen = body.length - MARKER1_LEN - MARKER2_LEN;
+            if (!fmt) throw '未知圖片資料格式';
+
+            const body = rawStr.slice(fmt.PREFIX.length, rawStr.length - fmt.SUFFIX.length);
+
+            const payloadLen = body.length - fmt.MARKER1.length - fmt.MARKER2.length;
             if (payloadLen <= 0) throw '未知圖片資料格式';
 
             const len1 = Math.floor(payloadLen / 3);
@@ -373,14 +404,14 @@ class Goda extends ComicSource {
 
             const segAEnd = len2;
             const marker1Start = segAEnd;
-            const segBStart = marker1Start + MARKER1_LEN;
+            const segBStart = marker1Start + fmt.MARKER1.length;
             const segBEnd = segBStart + len3;
             const marker2Start = segBEnd;
-            const segCStart = marker2Start + MARKER2_LEN;
+            const segCStart = marker2Start + fmt.MARKER2.length;
 
             if (
-                body.slice(marker1Start, segBStart) !== MARKER1 ||
-                body.slice(marker2Start, segCStart) !== MARKER2 ||
+                body.slice(marker1Start, segBStart) !== fmt.MARKER1 ||
+                body.slice(marker2Start, segCStart) !== fmt.MARKER2 ||
                 body.length - segCStart !== len1
             ) {
                 throw '未知圖片資料格式';
@@ -445,11 +476,12 @@ class Goda extends ComicSource {
             const arr = JSON.parse(json);
 
             const out = new Array(arr.length);
-            if (domain) {
-                for (let k = 0; k < arr.length; k++) out[k] = domain + arr[k].url;
-            } else {
-                for (let k = 0; k < arr.length; k++) out[k] = arr[k].url;
+            for (let k = 0; k < arr.length; k++) {
+                // hip 為純字串陣列, goda 為 {url} 物件陣列
+                const u = typeof arr[k] === 'string' ? arr[k] : arr[k].url;
+                out[k] = domain ? domain + u : u;
             }
+
             return out;
         }
 
@@ -463,69 +495,139 @@ class Goda extends ComicSource {
                 headers: this.headers
             }
         },
+        _tagTrim(el) {
+            let text = el.text.trim();
+            if (text.endsWith(",")) {
+                text = text.slice(0, -1).trim();
+            }
+            return text;
+        },
         loadInfo: async (id) => {
             const res = await Network.get(this.baseUrl + id);
-            if (res.status !== 200) {
-                throw `Invalid status code: ${res.status}`;
-            }
+            if (res.status !== 200) throw `Invalid status code: ${res.status}`;
+
             const document = new HtmlDocument(res.body);
-            const title = document.querySelector(".text-xl").text.trim().split("   ")[0]
-            const cover = document.querySelector(".object-cover").attributes["src"];
-            const description = document.querySelector("p.text-medium").text;
+            const infoWrap = {
+                title: document.querySelector(".text-xl").text.trim().split("   ")[0],
+                cover: document.querySelector(".object-cover").attributes["src"],
+                description: document.querySelector("p.text-medium").text,
+                tags: { "作者": [], "類型": [], "標籤": [] },
+                chapters: {},
+                recommend: []
+            };
+
             const infos = document.querySelectorAll("div.py-1");
-            const tags = { "作者": [], "类型": [], "标签": [] };
-            for (let author of infos[0].querySelectorAll("a > span")) {
-                let author_name = author.text.trim();
-                if (author_name.endsWith(",")) {
-                    author_name = author_name.slice(0, -1).trim();
-                }
-                tags["作者"].push(author_name);
-            }
-            for (let category of infos[1].querySelectorAll("a > span")) {
-                let category_name = category.text.trim();
-                if (category_name.endsWith(",")) {
-                    category_name = category_name.slice(0, -1).trim();
-                }
-                tags["类型"].push(category_name);
-            }
-            for (let tag of infos[2].querySelectorAll("a")) {
-                tags["标签"].push(tag.text.replace("\n", "").replaceAll(" ", "").replace("#", ""));
-            }
-            const mangaId = document.querySelector("#mangachapters").attributes["data-mid"];
-            const jsonRes = await Network.get(`${this.apiUrl}/manga/get?mid=${mangaId}&mode=all&t=${Date.now()}`, this.headers);
-            const jsonData = JSON.parse(jsonRes.body);
-            const chapters = {};
-            for (let ch of jsonData["data"]["chapters"]) {
-                chapters[`${mangaId}@${ch["id"]}`] = ch["attributes"]["title"];
-            }
-            const recommend = [];
-            for (let item of document.querySelectorAll("div.cardlist > div.pb-2")) {
-                recommend.push(new Comic({
+
+            for (const author of infos[0].querySelectorAll("a span")) {
+                infoWrap.tags["作者"].push(this.comic._tagTrim(author));
+            };
+
+            for (const category of infos[1].querySelectorAll("a span")) {
+                infoWrap.tags["類型"].push(this.comic._tagTrim(category));
+            };
+
+            for (const tag of infos[2].querySelectorAll("a")) {
+                infoWrap.tags["標籤"].push(tag.text.replace("\n", "").replaceAll(" ", "").replace("#", ""));
+            };
+
+            for (const item of document.querySelectorAll("div.cardlist div.pb-2")) {
+                infoWrap.recommend.push(new Comic({
                     id: item.querySelector("a").attributes["href"],
                     title: item.querySelector("h3").text,
                     cover: item.querySelector("img").attributes["src"]
-                }));
+                }))
+            };
+
+            // 嘗試獲取章節
+            const chaptersEl = document.querySelector("#mangachapters");
+
+            try {
+                if (chaptersEl) {
+                    const mangaId = chaptersEl.attributes["data-mid"];
+                    const jsonRes = await Network.get(
+                        `${this.apiUrl}/manga/get?mid=${mangaId}&mode=all`,
+                        this.headers
+                    );
+
+                    const jsonData = JSON.parse(jsonRes.body);
+                    for (const cp of jsonData["data"]["chapters"]) {
+                        infoWrap.chapters[`m=${mangaId}&c=${cp["id"]}`] = cp["attributes"]["title"];
+                    }
+                }
+                else {
+
+                    // 嬉皮漫畫
+                    const hipmhUrl = document.querySelector("button.abuttonmd").parent.attributes["href"];
+                    const mid = hipmhUrl.split('/').pop().split('-')[0];
+
+                    const self = this;
+                    const baseApi = `${this.hipApiUrl}/v1/manga/chapters?mid=${mid}`;
+
+                    UI.showMessage("此為 HipManga 需要等待較長時間...");
+
+                    async function runTask(index) {
+                        const jsonRes = await Network.get(`${baseApi}&page=${index}&per_page=50&order=asc`, self.headers);
+                        const jsonData = JSON.parse(jsonRes.body);
+
+                        const { items, total_pages } = jsonData["data"];
+
+                        for (const { hid, title } of items) {
+                            infoWrap.chapters[hid] = title;
+                        };
+
+                        return Promise.resolve(total_pages);
+                    };
+
+                    // 首次執行
+                    const totalPages = await runTask(1);
+
+                    // 如果有後續頁面
+                    if (totalPages > 1) {
+                        for (let i = 2; i <= totalPages; i++) {
+                            await runTask(i);
+                        }
+                    }
+
+                };
+            } catch (e) {
+                throw e;
             }
-            return new ComicDetails({
-                title: title,
-                cover: cover,
-                description: description,
-                tags: tags,
-                chapters: chapters,
-                recommend: recommend,
-            });
+
+            return new ComicDetails(infoWrap);
         },
 
         loadEp: async (comicId, epId) => {
-            const ids = epId.split("@");
-            const res = await Network.get(`${this.apiUrl}/chapter/getinfo?m=${ids[0]}&c=${ids[1]}`, this.headers);
+            const isGoda = epId.startsWith("m=");
+
+            const url =
+                isGoda
+                    ? `${this.apiUrl}/chapter/getinfo?${epId}`
+                    : `https://reader.hipmh.top/chapter/${epId}`
+
+            const res = await Network.get(url, this.headers);
             if (res.status !== 200) {
                 throw `Invalid status code: ${res.status}`;
             }
 
-            const jsonData = JSON.parse(res.body);
-            return {
-                images: this.imgDataDecode.decodeStr(jsonData["data"]["info"]["images"]["images"], this.imageUrl)
+            if (isGoda) {
+                const jsonData = JSON.parse(res.body);
+                return {
+                    images: this.imgDataDecode.decodeStr(jsonData["data"]["info"]["images"]["images"], this.imageUrl)
+                };
+            } else {
+                try {
+                    const document = new HtmlDocument(res.body);
+                    const hid = document.querySelector("#chapcontent").attributes["data-api-hid"];
+
+                    const jsonRes = await Network.get(`${this.hipApiUrl}/v2/chapter?hid=${hid}`, this.headers);
+                    const jsonData = JSON.parse(jsonRes.body);
+
+                    return {
+                        images: this.imgDataDecode.decodeStr(jsonData["data"]["images"], this.hipImageUrl)
+                    };
+                } catch (e) {
+                    throw e;
+                }
             };
         },
 
