@@ -6,7 +6,7 @@ import { File } from "../../File.mjs";
 import { log } from "console";
 
 /**
- * @param {Array} jsonName - 數據需要是 ["json1", "json2"...] 的格式
+ * @param {array} wordList - 數據需要是 ["json1", "json2"...] 的格式
  * @param {boolean} sort - 是否進行排序
  * @param {boolean} merge - 合併模式 (將所有數據合併為一個檔案)
  * @param {string} mergeName - 合併模式的檔名
@@ -14,7 +14,7 @@ import { log } from "console";
  * @param {boolean} similarExcl - 排除 key 和 value 相似的, 另外輸出結果
  */
 async function dataCleaning({
-    jsonName,
+    wordList,
     sort = true,
     merge = false,
     mergeName = "All_Words",
@@ -23,7 +23,7 @@ async function dataCleaning({
 } = {}) {
     const readData = {}, similarData = {};
 
-    for (const name of jsonName) { // 讀取所有傳入的數據
+    for (const name of wordList) { // 讀取所有傳入的數據
         readData[name] = await File.Read(`../${name}.json`);
     };
 
@@ -104,7 +104,7 @@ async function dataCleaning({
         const [cleanKey, cleanValue] = [key.trim().toLowerCase(), value.trim()]; // 清潔數據格式
 
         // ? 針對特殊檔案進行跳過
-        if (jsonName === "Exclude") return [cleanKey, cleanValue];
+        if (wordList === "Exclude") return [cleanKey, cleanValue];
 
         if (/^\d+$/.test(cleanKey)) return; // 排除 key 都是數字
         if (cleanKey.length < 3) return; // 排除 key 長度小於 3
@@ -143,22 +143,22 @@ async function dataCleaning({
 /* ======================================================= */
 
 async function generatorWord() {
-    const jsonName = ["Beautify", "Cosplayer", "Short", "Long", "Language", "Group", "Artist", "Character", "Parody", "Tags"];
+    const wordList = ["Beautify", "Cosplayer", "Short", "Long", "Language", "Group", "Artist", "Character", "Parody", "Tags"];
 
     // 個別處理
-    await dataCleaning({ lengthSort: false, jsonName });
+    await dataCleaning({ lengthSort: false, wordList });
 
     // 完整 合併處理 (合併模式, 列表越後面的數據會覆蓋前面的數據)
-    await dataCleaning({ merge: true, jsonName });
+    await dataCleaning({ merge: true, wordList });
 
     dataCleaning({ // 精選 合併處理
         merge: true,
         mergeName: "Curated_Words",
-        jsonName: ["Beautify", "Cosplayer", "Long", "Language", "Character", "Parody", "Tags"]
+        wordList: ["Beautify", "Cosplayer", "Long", "Language", "Character", "Parody", "Tags"]
     });
 }
 
 // Exclude 處理
-dataCleaning({ jsonName: ["Exclude"] });
+dataCleaning({ wordList: ["Exclude"] });
 
 generatorWord();
