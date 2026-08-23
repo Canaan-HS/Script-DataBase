@@ -115,6 +115,7 @@ async function dataCleaning({
                 key.replace(/[\W_]+/g, ""),
                 value.toLowerCase().replace(/[\W_]+/g, "")
             ];
+
             if (similar_key === similar_value) {
                 similarData[cleanKey] = cleanValue;
                 return;
@@ -142,7 +143,7 @@ async function dataCleaning({
 /* ======================================================= */
 
 async function generatorWord() {
-    const jsonName = ["Beautify", "Cosplayer", "Group", "Artist", "Parody", "Character", "Short", "Long", "Language", "Tags"];
+    const jsonName = ["Beautify", "Cosplayer", "Short", "Long", "Language", "Group", "Artist", "Character", "Parody", "Tags"];
 
     // 個別處理
     await dataCleaning({ lengthSort: false, jsonName });
@@ -153,7 +154,7 @@ async function generatorWord() {
     dataCleaning({ // 精選 合併處理
         merge: true,
         mergeName: "Curated_Words",
-        jsonName: ["Beautify", "Cosplayer", "Parody", "Character", "Long", "Language", "Tags"]
+        jsonName: ["Beautify", "Cosplayer", "Long", "Language", "Character", "Parody", "Tags"]
     });
 }
 
