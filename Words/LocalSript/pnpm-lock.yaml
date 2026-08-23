@@ -7,7 +7,7 @@ settings:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
       axios:
         specifier: ^1.19.0
         version: 1.19.0(debug@4.4.3)
