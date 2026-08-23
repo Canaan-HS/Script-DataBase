@@ -129,6 +129,6 @@ async function generatorWord() {
 }
 
 // Exclude 處理
-// createCleaner.run({ wordList: ["Exclude"] });
+createCleaner.run({ wordList: ["Exclude"] });
 
 generatorWord();
