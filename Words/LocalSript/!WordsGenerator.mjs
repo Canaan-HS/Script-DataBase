@@ -113,7 +113,7 @@ const createCleaner = (() => {
 /* ======================================================= */
 
 async function generatorWord() {
-    const wordList = ["Beautify", "Cosplayer", "Short", "Long", "Language", "Group", "Artist", "Character", "Parody", "Tags"];
+    const wordList = ["Cosplayer", "Short", "Long", "Language", "Group", "Artist", "Character", "Parody", "Beautify", "Tags"];
 
     // 個別處理
     await createCleaner.run({ lengthSort: false, wordList });
@@ -124,7 +124,7 @@ async function generatorWord() {
     createCleaner.run({ // 精選 合併處理
         merge: true,
         mergeName: "Curated_Words",
-        wordList: ["Beautify", "Cosplayer", "Long", "Language", "Character", "Parody", "Tags"]
+        wordList: ["Cosplayer", "Long", "Language", "Character", "Parody", "Beautify", "Tags"]
     });
 }
 
