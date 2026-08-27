@@ -8,7 +8,7 @@ class ManWaBa extends ComicSource {
   // unique id of the source
   key = "manwaba";
 
-  version = "1.0.4";
+  version = "1.0.5";
 
   minAppVersion = "1.4.0";
 
@@ -107,7 +107,7 @@ class ManWaBa extends ComicSource {
           result[key] = magnaList[key].map(parseComic);
         }
         return result;
-      },
+      }
     },
   ];
 
@@ -291,7 +291,7 @@ class ManWaBa extends ComicSource {
       {
         options: ["0-更新", "1-新作", "2-畅销", "3-热门", "4-收藏"],
       },
-    ],
+    ]
   };
 
   /// search related
@@ -305,42 +305,37 @@ class ManWaBa extends ComicSource {
      */
     load: async (keyword, options, page) => {
       const pageSize = 20;
-      let url = `${this.api}/search`;
-      let params = {
-        keyword,
-        type: "mh",
-        page,
-        pageSize,
-      };
-      let data = await this.fetchJson(url, { params }).then((res) => res.data);
-      let total = data.total;
-      let comics = data.list.map((item) => {
+      const url = `${this.api}/search`;
+      const params = { keyword, type: "mh", page, pageSize };
+
+      const { list, total } = await this.fetchJson(url, { params }).then((res) => res.data);
+
+      const comics = list.map(({ id, title, author, cover, tags, description, status }) => {
         return new Comic({
-          id: item.id.toString(),
-          title: item.title,
-          subTitle: item.author,
-          cover: item.cover,
-          tags: item.tags.split(","),
-          description: item.description,
-          status: item.status == 0 ? "连载中" : "已完结",
+          title, cover, description,
+          id: id.toString(),
+          subTitle: author,
+          tags: tags.split(","),
+          status: status === 0 ? "连载中" : "已完结"
         });
       });
-      let maxPage = Math.ceil(total / pageSize);
+
+      const maxPage = Math.ceil(total / pageSize);
       return {
         comics,
         maxPage,
       };
-    },
+    }
   };
 
   imgDataDecode = (() => {
     const keyBytes = Convert.encodeUtf8('0B6666A0-BB59-1381-B746-a0E4C9AC').slice(0, 32);
     const getMimeType = (view) => {
-        if (view[0] === 0xFF && view[1] === 0xD8 && view[2] === 0xFF) return 'image/jpeg';
-        if (view[0] === 0x89 && view[1] === 0x50 && view[2] === 0x4E && view[3] === 0x47) return 'image/png';
-        if (view[0] === 0x47 && view[1] === 0x49 && view[2] === 0x46) return 'image/gif';
-        if (view[0] === 0x52 && view[1] === 0x49 && view[2] === 0x46 && view[3] === 0x46) return 'image/webp';
-        return null;
+      if (view[0] === 0xFF && view[1] === 0xD8 && view[2] === 0xFF) return 'image/jpeg';
+      if (view[0] === 0x89 && view[1] === 0x50 && view[2] === 0x4E && view[3] === 0x47) return 'image/png';
+      if (view[0] === 0x47 && view[1] === 0x49 && view[2] === 0x46) return 'image/gif';
+      if (view[0] === 0x52 && view[1] === 0x49 && view[2] === 0x46 && view[3] === 0x46) return 'image/webp';
+      return null;
     };
     return (arrayBuffer, base64 = false) => {
       const view = new Uint8Array(arrayBuffer);
@@ -370,10 +365,6 @@ class ManWaBa extends ComicSource {
         title, cover, status, author, tags, intro, editTime
       } = await this.fetchJson(`${this.api}/comic/${id}`, { payload: undefined }).then(res => res.data);
 
-      // 獲取漫畫封面數據 (不支援 base64 顯示)
-      // const coverRaw = await Network.fetchBytes("GET", cover);
-      // if (coverRaw.status === 200) cover = this.imgDataDecode(coverRaw.body, true);
-
       const chapterApi = `${this.api}/comic/chapter`;
       const params = { comicId: id, pageSize: 1 };
 
@@ -396,6 +387,12 @@ class ManWaBa extends ComicSource {
         description: intro,
         updateTime: new Date(editTime * 1000).toLocaleDateString(),
       });
+    },
+    onThumbnailLoad: () => {
+      return {
+        headers: this.headers,
+        onResponse: this.imgDataDecode,
+      }
     },
     /**
      * load images of a chapter
@@ -428,7 +425,7 @@ class ManWaBa extends ComicSource {
         images: imageRes.map((item) => item.url),
       };
     },
-    onImageLoad: (url, comicId, epId) => {
+    onImageLoad: () => {
       return {
         headers: this.headers,
         onResponse: this.imgDataDecode,
