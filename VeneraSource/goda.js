@@ -5,7 +5,7 @@ class Goda extends ComicSource {
 
     key = "goda"
 
-    version = "1.0.3"
+    version = "1.0.4"
 
     minAppVersion = "1.4.0"
 
@@ -126,6 +126,7 @@ class Goda extends ComicSource {
                         }
                     });
                 }
+                document.dispose();
                 return result;
             }
         }
@@ -247,10 +248,11 @@ class Goda extends ComicSource {
             } catch (_) {
                 maxPage = 1;
             }
-            return {
-                comics: this.parseComics(document),
-                maxPage: maxPage
-            };
+
+            const comics = this.parseComics(document);
+            document.dispose();
+
+            return { comics, maxPage };
         }
     }
 
@@ -268,10 +270,11 @@ class Goda extends ComicSource {
             } catch (_) {
                 maxPage = 1;
             }
-            return {
-                comics: this.parseComics(document),
-                maxPage: maxPage
-            };
+
+            const comics = this.parseComics(document);
+            document.dispose();
+
+            return { comics, maxPage };
         },
         // enable tags suggestions
         enableTagsSuggestions: false,
@@ -591,7 +594,9 @@ class Goda extends ComicSource {
                 };
             } catch (e) {
                 throw e;
-            }
+            } finally {
+                document.dispose();
+            };
 
             return new ComicDetails(infoWrap);
         },
@@ -622,6 +627,7 @@ class Goda extends ComicSource {
                     const jsonRes = await Network.get(`${this.hipApiUrl}/v2/chapter?hid=${hid}`, this.headers);
                     const jsonData = JSON.parse(jsonRes.body);
 
+                    document.dispose();
                     return {
                         images: this.imgDataDecode.decodeStr(jsonData["data"]["images"], this.hipImageUrl)
                     };
