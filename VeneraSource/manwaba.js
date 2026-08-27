@@ -10,12 +10,12 @@ class ManWaBa extends ComicSource {
 
   version = "1.0.5";
 
-  minAppVersion = "1.4.0";
+  // VeneraX Version Required
+  minAppVersion = "2.2.10";
 
   // update url
   url = "https://gitlab.com/Canaan-HS/database/-/raw/main/VeneraSource/manwaba.js";
 
-  //修改域名不能用问题
   api = "https://manwaye.cc/api";
 
   init() {
