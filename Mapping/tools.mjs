@@ -6,7 +6,8 @@ import * as OpenCC from "opencc-js";
 import clipboardy from "clipboardy";
 import { File } from "../File.mjs";
 
-const mainJson = "./sc2tcStr.json";
+// 該表紀錄的數據 key 是繁體 value 是簡體
+const mainJson = "./tc2scStr.json";
 
 /* 列表清洗 key = 繁體, value = 簡體 */
 function clear(source = mainJson) {
