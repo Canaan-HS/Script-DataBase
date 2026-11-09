@@ -75,7 +75,7 @@ function generate() {
 };
 
 
-clear();
-// generate();
+// clear();
+generate();
 
 // compare()
