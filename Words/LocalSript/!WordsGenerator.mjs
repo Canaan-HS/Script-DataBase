@@ -3,7 +3,6 @@ import { fileURLToPath } from "url";
 process.chdir(path.dirname(fileURLToPath(import.meta.url)));
 
 import { File } from "../../File.mjs";
-import { log } from "console";
 
 const createCleaner = (() => {
 
