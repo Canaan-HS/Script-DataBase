@@ -42,7 +42,7 @@ jobs:
       - name: 提交變更
         run: |
           git config --global user.name 'Canaan-HS'
-          git config --global user.email 's3459897@gmail.com'
+          git config --global user.email 'c8anaan9hs75@gmail.com'
 
           if [[ -n $(git status -s) ]]; then
             git add -A
