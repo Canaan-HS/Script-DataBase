@@ -223,7 +223,7 @@ class MXS extends ComicSource {
     // 执行网络请求并返回HTML文档对象
     async fetchDocument(url) {
         const res = await Network.get(url, {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/160.0.0.0 Safari/537.36"
         });
 
         if (res.status !== 200) {
