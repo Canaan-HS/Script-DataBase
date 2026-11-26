@@ -1,4 +1,4 @@
-/** @type {import('./_venera_.js')} */
+/** @type {import('./init.js')} */
 
 /**
  * @typedef {Object} PageJumpTarget
