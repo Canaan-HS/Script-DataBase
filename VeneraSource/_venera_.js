@@ -195,6 +195,21 @@ let Convert = {
      * @param {ArrayBuffer} key
      * @returns {ArrayBuffer}
      */
+    encryptAesEcb: (value, key) => {
+        return sendMessage({
+            method: "convert",
+            type: "aes-ecb",
+            value: value,
+            key: key,
+            isEncode: true
+        });
+    },
+
+    /**
+     * @param {ArrayBuffer} value
+     * @param {ArrayBuffer} key
+     * @returns {ArrayBuffer}
+     */
     decryptAesEcb: (value, key) => {
         return sendMessage({
             method: "convert",
@@ -202,6 +217,23 @@ let Convert = {
             value: value,
             key: key,
             isEncode: false
+        });
+    },
+
+    /**
+     * @param {ArrayBuffer} value
+     * @param {ArrayBuffer} key
+     * @param {ArrayBuffer} iv
+     * @returns {ArrayBuffer}
+     */
+    encryptAesCbc: (value, key, iv) => {
+        return sendMessage({
+            method: "convert",
+            type: "aes-cbc",
+            value: value,
+            key: key,
+            iv: iv,
+            isEncode: true
         });
     },
 
@@ -225,17 +257,55 @@ let Convert = {
     /**
      * @param {ArrayBuffer} value
      * @param {ArrayBuffer} key
+     * @param {ArrayBuffer} iv
      * @param {number} blockSize
      * @returns {ArrayBuffer}
      */
-    decryptAesCfb: (value, key, blockSize) => {
+    encryptAesCfb: (value, key, iv, blockSize) => {
         return sendMessage({
             method: "convert",
             type: "aes-cfb",
             value: value,
             key: key,
+            iv: iv,
+            blockSize: blockSize,
+            isEncode: true
+        });
+    },
+
+    /**
+     * @param {ArrayBuffer} value
+     * @param {ArrayBuffer} key
+     * @param {ArrayBuffer} iv
+     * @param {number} blockSize
+     * @returns {ArrayBuffer}
+     */
+    decryptAesCfb: (value, key, iv, blockSize) => {
+        return sendMessage({
+            method: "convert",
+            type: "aes-cfb",
+            value: value,
+            key: key,
+            iv: iv,
             blockSize: blockSize,
             isEncode: false
+        });
+    },
+
+    /**
+     * @param {ArrayBuffer} value
+     * @param {ArrayBuffer} key
+     * @param {number} blockSize
+     * @returns {ArrayBuffer}
+     */
+    encryptAesOfb: (value, key, blockSize) => {
+        return sendMessage({
+            method: "convert",
+            type: "aes-ofb",
+            value: value,
+            key: key,
+            blockSize: blockSize,
+            isEncode: true
         });
     },
 
@@ -395,9 +465,10 @@ let Network = {
      * @param {string} url - The URL to send the request to.
      * @param {Object} headers - The headers to include in the request.
      * @param data - The data to send with the request.
+     * @param {Object} extra - Extra options to pass to the interceptor.
      * @returns {Promise<{status: number, headers: {}, body: ArrayBuffer}>} The response from the request.
      */
-    async fetchBytes(method, url, headers, data) {
+    async fetchBytes(method, url, headers, data, extra) {
         let result = await sendMessage({
             method: 'http',
             http_method: method,
@@ -405,6 +476,7 @@ let Network = {
             url: url,
             headers: headers,
             data: data,
+            extra: extra,
         });
 
         if (result.error) {
@@ -420,15 +492,17 @@ let Network = {
      * @param {string} url - The URL to send the request to.
      * @param {Object} headers - The headers to include in the request.
      * @param data - The data to send with the request.
+     * @param {Object} extra - Extra options to pass to the interceptor.
      * @returns {Promise<{status: number, headers: {}, body: string}>} The response from the request.
      */
-    async sendRequest(method, url, headers, data) {
+    async sendRequest(method, url, headers, data, extra) {
         let result = await sendMessage({
             method: 'http',
             http_method: method,
             url: url,
             headers: headers,
             data: data,
+            extra: extra,
         });
 
         if (result.error) {
@@ -442,10 +516,11 @@ let Network = {
      * Sends an HTTP GET request.
      * @param {string} url - The URL to send the request to.
      * @param {Object} headers - The headers to include in the request.
+     * @param {Object} extra - Extra options to pass to the interceptor.
      * @returns {Promise<{status: number, headers: {}, body: string}>} The response from the request.
      */
-    async get(url, headers) {
-        return this.sendRequest('GET', url, headers);
+    async get(url, headers, extra) {
+        return this.sendRequest('GET', url, headers, extra);
     },
 
     /**
@@ -453,10 +528,11 @@ let Network = {
      * @param {string} url - The URL to send the request to.
      * @param {Object} headers - The headers to include in the request.
      * @param data - The data to send with the request.
+     * @param {Object} extra - Extra options to pass to the interceptor.
      * @returns {Promise<{status: number, headers: {}, body: string}>} The response from the request.
      */
-    async post(url, headers, data) {
-        return this.sendRequest('POST', url, headers, data);
+    async post(url, headers, data, extra) {
+        return this.sendRequest('POST', url, headers, data, extra);
     },
 
     /**
@@ -464,10 +540,11 @@ let Network = {
      * @param {string} url - The URL to send the request to.
      * @param {Object} headers - The headers to include in the request.
      * @param data - The data to send with the request.
+     * @param {Object} extra - Extra options to pass to the interceptor.
      * @returns {Promise<{status: number, headers: {}, body: string}>} The response from the request.
      */
-    async put(url, headers, data) {
-        return this.sendRequest('PUT', url, headers, data);
+    async put(url, headers, data, extra) {
+        return this.sendRequest('PUT', url, headers, data, extra);
     },
 
     /**
@@ -475,20 +552,22 @@ let Network = {
      * @param {string} url - The URL to send the request to.
      * @param {Object} headers - The headers to include in the request.
      * @param data - The data to send with the request.
+     * @param {Object} extra - Extra options to pass to the interceptor.
      * @returns {Promise<{status: number, headers: {}, body: string}>} The response from the request.
      */
-    async patch(url, headers, data) {
-        return this.sendRequest('PATCH', url, headers, data);
+    async patch(url, headers, data, extra) {
+        return this.sendRequest('PATCH', url, headers, data, extra);
     },
 
     /**
      * Sends an HTTP DELETE request.
      * @param {string} url - The URL to send the request to.
      * @param {Object} headers - The headers to include in the request.
+     * @param {Object} extra - Extra options to pass to the interceptor.
      * @returns {Promise<{status: number, headers: {}, body: string}>} The response from the request.
      */
-    async delete(url, headers) {
-        return this.sendRequest('DELETE', url, headers);
+    async delete(url, headers, extra) {
+        return this.sendRequest('DELETE', url, headers, extra);
     },
 
     /**
