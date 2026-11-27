@@ -1295,31 +1295,6 @@ class Pixiv extends ComicSource {
             validator: null,
             default: "",
         },
-        manual_cookie_login: {
-            title: "手動輸入 Cookie",
-            type: "callback",
-            buttonText: "輸入",
-            callback: async () => {
-                let mode = await UI.showSelectDialog('Cookie 登入方式',
-                    ['只輸入 PHPSESSID', '貼上整行 Cookie', '取消'], 0)
-                if (mode === null || mode === undefined || mode === 2) return
-                let raw
-                if (mode === 0) {
-                    raw = await UI.showInputDialog('貼上 PHPSESSID', (value) => {
-                        return value && value.trim() ? null : '不可為空'
-                    })
-                    if (!raw) return
-                    raw = 'PHPSESSID=' + raw.trim()
-                } else {
-                    raw = await UI.showInputDialog('貼上整行 Cookie', (value) => {
-                        return value && value.indexOf('PHPSESSID=') >= 0 ? null : '需含 PHPSESSID='
-                    })
-                    if (!raw) return
-                }
-                let ok = await this.applyCookies(raw)
-                UI.showMessage(ok ? 'Cookie 已儲存' : 'Cookie 無效')
-            },
-        },
         refresh_category_data: {
             title: "更新分類資料",
             type: "callback",
@@ -1398,17 +1373,6 @@ class Pixiv extends ComicSource {
             '圖片網域': '图片域名',
             '自訂': '自定义',
             '自訂圖片網域': '自定义图片域名',
-            '手動輸入 Cookie': '手动输入 Cookie',
-            '輸入': '输入',
-            'Cookie 登入方式': 'Cookie 登录方式',
-            '只輸入 PHPSESSID': '只输入 PHPSESSID',
-            '貼上整行 Cookie': '粘贴整行 Cookie',
-            '取消': '取消',
-            '貼上 PHPSESSID': '输入 PHPSESSID',
-            '不可為空': '不能为空',
-            '需含 PHPSESSID=': '需包含 PHPSESSID=',
-            'Cookie 已儲存': 'Cookie 已保存',
-            'Cookie 無效': 'Cookie 无效',
             '更新分類資料': '刷新分类数据',
             '更新': '刷新',
             '請先登入': '请先登录',
@@ -1467,17 +1431,6 @@ class Pixiv extends ComicSource {
             '圖片網域': '圖片網域',
             '自訂': '自訂',
             '自訂圖片網域': '自訂圖片網域',
-            '手動輸入 Cookie': '手動輸入 Cookie',
-            '輸入': '輸入',
-            'Cookie 登入方式': 'Cookie 登入方式',
-            '只輸入 PHPSESSID': '只輸入 PHPSESSID',
-            '貼上整行 Cookie': '貼上整行 Cookie',
-            '取消': '取消',
-            '貼上 PHPSESSID': '貼上 PHPSESSID',
-            '不可為空': '不可為空',
-            '需含 PHPSESSID=': '需含 PHPSESSID=',
-            'Cookie 已儲存': 'Cookie 已儲存',
-            'Cookie 無效': 'Cookie 無效',
             '更新分類資料': '更新分類資料',
             '更新': '更新',
             '請先登入': '請先登入',
@@ -1536,17 +1489,6 @@ class Pixiv extends ComicSource {
             '圖片網域': 'Image Host',
             '自訂': 'Custom',
             '自訂圖片網域': 'Custom Image Host',
-            '手動輸入 Cookie': 'Enter Cookie Manually',
-            '輸入': 'Input',
-            'Cookie 登入方式': 'Cookie login method',
-            '只輸入 PHPSESSID': 'Enter only PHPSESSID',
-            '貼上整行 Cookie': 'Paste full Cookie',
-            '取消': 'Cancel',
-            '貼上 PHPSESSID': 'Enter PHPSESSID',
-            '不可為空': 'Cannot be empty',
-            '需含 PHPSESSID=': 'Must contain PHPSESSID=',
-            'Cookie 已儲存': 'Cookie saved',
-            'Cookie 無效': 'Invalid cookie',
             '更新分類資料': 'Refresh Category Data',
             '更新': 'Refresh',
             '請先登入': 'Please log in first',
