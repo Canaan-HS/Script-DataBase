@@ -1,4 +1,3 @@
-/** @type {import('./_venera_.js')} */
 class Goda extends ComicSource {
 
     name = "GoDa漫画"

@@ -1,4 +1,3 @@
-/** @type {import('./_venera_.js')} */
 class ManWaBa extends ComicSource {
   // Note: The fields which are marked as [Optional] should be removed if not used
 
